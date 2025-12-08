@@ -1,0 +1,35 @@
+{
+  "name": "@textmesh/messaging-service",
+  "version": "1.0.0",
+  "description": "TextMesh Direct Messaging Service",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@textmesh/db-client": "workspace:*",
+    "@textmesh/event-bus": "workspace:*",
+    "@textmesh/logger": "workspace:*",
+    "@textmesh/shared-types": "workspace:*",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "express-validator": "^7.0.1",
+    "uuid": "^9.0.0",
+    "ioredis": "^5.3.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/compression": "^1.7.5",
+    "@types/uuid": "^9.0.7",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "ts-node-dev": "^2.0.0"
+  }
+}

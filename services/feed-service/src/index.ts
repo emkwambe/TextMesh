@@ -7,6 +7,8 @@ import { createLogger } from '@textmesh/logger';
 import { getPrismaClient, disconnectPrisma, getRedisClient, disconnectRedis } from '@textmesh/db-client';
 import { createEventBus, EventType } from '@textmesh/event-bus';
 import { FeedService } from './services/feed.service.js';
+import { fanoutService, initializeFanoutHandlers } from './services/fanout.service.js';
+import { precomputeService, startPrecomputeJobs } from './services/precompute.service.js';
 
 const PORT = parseInt(process.env['FEED_SERVICE_PORT'] || '3004', 10);
 const logger = createLogger({ service: 'feed-service', level: 'info' });
@@ -74,6 +76,54 @@ async function main() {
     const feed = await feedService.getDiscoverFeed(req.userId, cursor, parseInt(limit || '20', 10));
     res.json({ success: true, data: feed });
   });
+
+  // For You feed (personalized)
+  app.get('/for-you', async (req, res) => {
+    if (!req.userId) return res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED' } });
+    const { limit } = req.query as { limit?: string };
+
+    // Compute on-demand if not cached
+    await precomputeService.computeForYouFeed(req.userId);
+
+    const feedKey = `feed:for_you:${req.userId}`;
+    const entries = await redis.zrevrange(feedKey, 0, parseInt(limit || '20', 10) - 1);
+    const posts = entries.map((e: string) => JSON.parse(e));
+
+    res.json({ success: true, data: { posts } });
+  });
+
+  // Trending feed
+  app.get('/trending', async (req, res) => {
+    const { limit } = req.query as { limit?: string };
+    const entries = await redis.zrevrange('feed:trending', 0, parseInt(limit || '20', 10) - 1);
+    const posts = entries.map((e: string) => JSON.parse(e));
+    res.json({ success: true, data: { posts } });
+  });
+
+  // Trending hashtags
+  app.get('/trending/hashtags', async (req, res) => {
+    const hashtags = await redis.zrevrange('trending:hashtags', 0, 19, 'WITHSCORES');
+    const result = [];
+    for (let i = 0; i < hashtags.length; i += 2) {
+      result.push({ tag: hashtags[i], count: parseInt(hashtags[i + 1], 10) });
+    }
+    res.json({ success: true, data: { hashtags: result } });
+  });
+
+  // Rebuild user feed
+  app.post('/rebuild', async (req, res) => {
+    if (!req.userId) return res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED' } });
+    await fanoutService.rebuildFeed(req.userId);
+    res.json({ success: true, message: 'Feed rebuilt' });
+  });
+
+  // Initialize fanout event handlers
+  await initializeFanoutHandlers();
+  logger.info('Fanout handlers initialized');
+
+  // Start pre-compute jobs
+  startPrecomputeJobs();
+  logger.info('Pre-compute jobs started');
 
   const server = app.listen(PORT, '0.0.0.0', () => logger.info(`Feed service running on port ${PORT}`));
 

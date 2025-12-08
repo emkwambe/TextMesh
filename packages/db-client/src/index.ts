@@ -323,6 +323,14 @@ export async function checkDatabaseHealth(): Promise<{
 export { PrismaClient } from '@prisma/client';
 export { Redis };
 
+// Export read replica and connection pool modules
+export * from './replica';
+export * from './connection-pool';
+
+// Convenience exports for services
+export const prisma = getPrismaClient();
+export const redis = getRedisClient();
+
 export default {
   getPrismaClient,
   disconnectPrisma,
