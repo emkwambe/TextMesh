@@ -104,7 +104,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: services/${{ matrix.service }}/Dockerfile
