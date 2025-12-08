@@ -32,7 +32,7 @@ function createPinoConfig(config: LoggerConfig): LoggerOptions {
   const { level, service, environment, pretty } = { ...defaultConfig, ...config };
 
   const baseConfig: LoggerOptions = {
-    level,
+    level: level || 'info',
     base: {
       service,
       environment,

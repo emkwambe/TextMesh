@@ -41,9 +41,10 @@ export interface RedisConfig {
 export function getRedisClient(config?: RedisConfig): Redis {
   if (!redis) {
     const redisUrl = config?.url || process.env['REDIS_URL'] || 'redis://localhost:6379';
+    const password = config?.password || process.env['REDIS_PASSWORD'];
 
     redis = new Redis(redisUrl, {
-      password: config?.password || process.env['REDIS_PASSWORD'],
+      ...(password && { password }),
       db: config?.db || 0,
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
@@ -283,8 +284,8 @@ export async function withTransaction<T>(
   prismaClient: PrismaClient,
   fn: (tx: PrismaClient) => Promise<T>
 ): Promise<T> {
-  return prismaClient.$transaction(async (tx) => {
-    return fn(tx as unknown as PrismaClient);
+  return prismaClient.$transaction(async (tx: unknown) => {
+    return fn(tx as PrismaClient);
   });
 }
 

@@ -104,7 +104,7 @@ export interface ValidationErrorDetail {
 export class AppError extends Error {
   constructor(
     public code: ErrorCode,
-    public message: string,
+    public override message: string,
     public statusCode: number = 500,
     public details?: Record<string, unknown>
   ) {

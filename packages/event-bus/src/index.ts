@@ -2,7 +2,7 @@
 // TEXTMESH EVENT BUS (KAFKA)
 // =================================
 
-import { Kafka, Producer, Consumer, EachMessagePayload, logLevel } from 'kafkajs';
+import { Kafka, Producer, Consumer, EachMessagePayload, logLevel, SASLOptions } from 'kafkajs';
 import { v4 as uuidv4 } from 'uuid';
 import {
   EventType,
@@ -43,8 +43,8 @@ export class EventBus {
     this.kafka = new Kafka({
       clientId: config.clientId,
       brokers: config.brokers,
-      ssl: config.ssl,
-      sasl: config.sasl,
+      ...(config.ssl !== undefined && { ssl: config.ssl }),
+      ...(config.sasl && { sasl: config.sasl as SASLOptions }),
       logLevel: logLevel.WARN,
       retry: {
         initialRetryTime: 100,
@@ -96,8 +96,8 @@ export class EventBus {
         timestamp: new Date().toISOString(),
         version: '1.0',
         source: this.serviceName,
-        correlationId: options?.correlationId,
-        userId: options?.userId,
+        ...(options?.correlationId && { correlationId: options.correlationId }),
+        ...(options?.userId && { userId: options.userId }),
       },
     };
 
@@ -143,8 +143,8 @@ export class EventBus {
           timestamp: new Date().toISOString(),
           version: '1.0',
           source: this.serviceName,
-          correlationId: options?.correlationId,
-          userId: options?.userId,
+          ...(options?.correlationId && { correlationId: options.correlationId }),
+          ...(options?.userId && { userId: options.userId }),
         },
       };
 
@@ -335,8 +335,8 @@ export function createEventMetadata(
     timestamp: new Date().toISOString(),
     version: '1.0',
     source,
-    correlationId: options?.correlationId,
-    userId: options?.userId,
+    ...(options?.correlationId && { correlationId: options.correlationId }),
+    ...(options?.userId && { userId: options.userId }),
   };
 }
 
