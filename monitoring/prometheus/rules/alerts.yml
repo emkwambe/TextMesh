@@ -1,0 +1,403 @@
+# TextMesh Alert Rules
+# Production-ready alerting configuration
+
+groups:
+  # Service Health Alerts
+  - name: service-health
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up{job=~".*-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 1 minute."
+          runbook_url: "https://docs.textmesh.com/runbook/service-down"
+
+      - alert: ServiceHighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (job)
+          /
+          sum(rate(http_requests_total[5m])) by (job)
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "{{ $labels.job }} has an error rate of {{ $value | humanizePercentage }} over the last 5 minutes."
+          runbook_url: "https://docs.textmesh.com/runbook/high-error-rate"
+
+      - alert: ServiceHighLatency
+        expr: |
+          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High latency on {{ $labels.job }}"
+          description: "{{ $labels.job }} p95 latency is {{ $value | humanizeDuration }}."
+          runbook_url: "https://docs.textmesh.com/runbook/high-latency"
+
+      - alert: ServiceHighLatencyCritical
+        expr: |
+          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 3
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Critical latency on {{ $labels.job }}"
+          description: "{{ $labels.job }} p95 latency is {{ $value | humanizeDuration }}."
+          runbook_url: "https://docs.textmesh.com/runbook/high-latency-critical"
+
+  # API Gateway Alerts
+  - name: api-gateway
+    interval: 30s
+    rules:
+      - alert: APIGatewayHighTraffic
+        expr: |
+          sum(rate(http_requests_total{job="api-gateway"}[1m])) > 10000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High traffic on API Gateway"
+          description: "API Gateway is receiving {{ $value | humanize }} requests per second."
+
+      - alert: APIGatewayRateLimitHits
+        expr: |
+          sum(rate(rate_limit_hits_total[5m])) > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High rate limit hits"
+          description: "Rate limiter is blocking {{ $value | humanize }} requests per second."
+
+  # Database Alerts
+  - name: database
+    interval: 30s
+    rules:
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL instance {{ $labels.instance }} is not responding."
+          runbook_url: "https://docs.textmesh.com/runbook/postgresql-down"
+
+      - alert: PostgreSQLHighConnections
+        expr: |
+          pg_stat_activity_count / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "PostgreSQL high connection usage"
+          description: "PostgreSQL is using {{ $value | humanizePercentage }} of max connections."
+
+      - alert: PostgreSQLReplicationLag
+        expr: pg_replication_lag > 30
+        for: 5m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "PostgreSQL replication lag"
+          description: "PostgreSQL replication lag is {{ $value | humanizeDuration }}."
+
+      - alert: PostgreSQLSlowQueries
+        expr: |
+          rate(pg_stat_statements_seconds_total{quantile="0.95"}[5m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "p95 query duration is {{ $value | humanizeDuration }}."
+
+  # Redis Alerts
+  - name: redis
+    interval: 30s
+    rules:
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance {{ $labels.instance }} is not responding."
+          runbook_url: "https://docs.textmesh.com/runbook/redis-down"
+
+      - alert: RedisHighMemoryUsage
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis is using {{ $value | humanizePercentage }} of available memory."
+
+      - alert: RedisKeyEviction
+        expr: |
+          rate(redis_evicted_keys_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Redis key eviction"
+          description: "Redis is evicting {{ $value | humanize }} keys per second."
+
+      - alert: RedisCacheHitRateLow
+        expr: |
+          redis_keyspace_hits_total / (redis_keyspace_hits_total + redis_keyspace_misses_total) < 0.8
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Redis cache hit rate low"
+          description: "Redis cache hit rate is {{ $value | humanizePercentage }}."
+
+  # Elasticsearch Alerts
+  - name: elasticsearch
+    interval: 30s
+    rules:
+      - alert: ElasticsearchClusterRed
+        expr: elasticsearch_cluster_health_status{color="red"} == 1
+        for: 2m
+        labels:
+          severity: critical
+          team: search
+        annotations:
+          summary: "Elasticsearch cluster is RED"
+          description: "Elasticsearch cluster health is red. Immediate action required."
+          runbook_url: "https://docs.textmesh.com/runbook/elasticsearch-red"
+
+      - alert: ElasticsearchClusterYellow
+        expr: elasticsearch_cluster_health_status{color="yellow"} == 1
+        for: 10m
+        labels:
+          severity: warning
+          team: search
+        annotations:
+          summary: "Elasticsearch cluster is YELLOW"
+          description: "Elasticsearch cluster health is yellow. Some shards are unassigned."
+
+      - alert: ElasticsearchHighSearchLatency
+        expr: |
+          elasticsearch_indices_search_query_time_seconds / elasticsearch_indices_search_query_total > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: search
+        annotations:
+          summary: "Elasticsearch high search latency"
+          description: "Average search latency is {{ $value | humanizeDuration }}."
+
+  # Kafka Alerts
+  - name: kafka
+    interval: 30s
+    rules:
+      - alert: KafkaBrokerDown
+        expr: kafka_brokers < 3
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Kafka broker down"
+          description: "Expected 3 Kafka brokers, but only {{ $value }} are available."
+          runbook_url: "https://docs.textmesh.com/runbook/kafka-broker-down"
+
+      - alert: KafkaConsumerLag
+        expr: |
+          kafka_consumer_group_lag > 10000
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Kafka consumer lag high"
+          description: "Consumer group {{ $labels.group }} has a lag of {{ $value }} messages."
+
+      - alert: KafkaConsumerLagCritical
+        expr: |
+          kafka_consumer_group_lag > 100000
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Critical Kafka consumer lag"
+          description: "Consumer group {{ $labels.group }} has a critical lag of {{ $value }} messages."
+
+  # Application Specific Alerts
+  - name: application
+    interval: 30s
+    rules:
+      - alert: HighPostCreationRate
+        expr: |
+          sum(rate(posts_created_total[5m])) > 5000
+        for: 5m
+        labels:
+          severity: info
+          team: product
+        annotations:
+          summary: "High post creation rate"
+          description: "Users are creating {{ $value | humanize }} posts per second."
+
+      - alert: HighSignupRate
+        expr: |
+          sum(rate(user_signups_total[5m])) > 100
+        for: 5m
+        labels:
+          severity: info
+          team: growth
+        annotations:
+          summary: "High signup rate"
+          description: "{{ $value | humanize }} users signing up per second."
+
+      - alert: AuthenticationFailures
+        expr: |
+          sum(rate(auth_failures_total[5m])) > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: "{{ $value | humanize }} authentication failures per second."
+
+      - alert: ContentModerationBacklog
+        expr: |
+          moderation_queue_size > 10000
+        for: 15m
+        labels:
+          severity: warning
+          team: trust-safety
+        annotations:
+          summary: "Content moderation backlog"
+          description: "{{ $value }} items pending moderation review."
+
+      - alert: SpamDetectionRate
+        expr: |
+          sum(rate(spam_detected_total[5m])) > 50
+        for: 10m
+        labels:
+          severity: warning
+          team: trust-safety
+        annotations:
+          summary: "High spam detection rate"
+          description: "{{ $value | humanize }} spam posts detected per second."
+
+  # Infrastructure Alerts
+  - name: infrastructure
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: HighMemoryUsage
+        expr: |
+          (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}."
+
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Only {{ $value }}% disk space remaining on {{ $labels.instance }}."
+
+      - alert: DiskSpaceCritical
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 5
+        for: 5m
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Only {{ $value }}% disk space remaining on {{ $labels.instance }}."
+
+  # SLO Alerts
+  - name: slo
+    interval: 1m
+    rules:
+      - alert: SLOAvailabilityBreach
+        expr: |
+          1 - (
+            sum(rate(http_requests_total{status!~"5.."}[30m]))
+            /
+            sum(rate(http_requests_total[30m]))
+          ) > 0.001
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "SLO availability breach"
+          description: "Service availability is below 99.9% SLO. Current: {{ $value | humanizePercentage }}."
+
+      - alert: SLOLatencyBreach
+        expr: |
+          histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[30m])) > 0.5
+        for: 10m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "SLO latency breach"
+          description: "p99 latency exceeds 500ms SLO. Current: {{ $value | humanizeDuration }}."
+
+      - alert: ErrorBudgetBurning
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[1h]))
+            /
+            sum(rate(http_requests_total[1h]))
+          ) > 0.001 * 36
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Error budget burning fast"
+          description: "Current error rate will exhaust monthly error budget in {{ 30 / ($value / 0.001) | humanize }} days."

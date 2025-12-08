@@ -1,0 +1,17 @@
+# Grafana Dashboard Provisioning
+# Auto-load dashboards for TextMesh monitoring
+
+apiVersion: 1
+
+providers:
+  - name: 'TextMesh Dashboards'
+    orgId: 1
+    folder: 'TextMesh'
+    folderUid: 'textmesh'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 60
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true
