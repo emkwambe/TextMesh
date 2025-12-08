@@ -45,7 +45,7 @@ jobs:
           xcode-version: '15.2'
 
       - name: Cache Swift packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/Library/Developer/Xcode/DerivedData
@@ -176,7 +176,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: Cache Gradle packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
