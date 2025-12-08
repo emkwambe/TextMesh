@@ -1,0 +1,31 @@
+{
+  "name": "@textmesh/db-client",
+  "version": "1.0.0",
+  "description": "Database client and utilities for TextMesh services",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src/",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "files": [
+    "dist",
+    "prisma"
+  ],
+  "dependencies": {
+    "@prisma/client": "^5.7.0",
+    "ioredis": "^5.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "prisma": "^5.7.0",
+    "typescript": "^5.3.0"
+  }
+}

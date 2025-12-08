@@ -1,0 +1,26 @@
+{
+  "name": "@textmesh/event-bus",
+  "version": "1.0.0",
+  "description": "Event bus for TextMesh services using Kafka",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src/"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@textmesh/shared-types": "workspace:*",
+    "kafkajs": "^2.2.4",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.3.0"
+  }
+}

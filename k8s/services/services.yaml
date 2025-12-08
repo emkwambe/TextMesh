@@ -1,0 +1,192 @@
+# =================================
+# TEXTMESH KUBERNETES SERVICES
+# =================================
+
+---
+# API Gateway Service (LoadBalancer for external access)
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: api-gateway
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: textmesh
+    component: api-gateway
+
+---
+# Auth Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: auth-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3001
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app: textmesh
+    component: auth-service
+
+---
+# User Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: user-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3002
+      targetPort: 3002
+      protocol: TCP
+      name: http
+  selector:
+    app: textmesh
+    component: user-service
+
+---
+# Post Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: post-service
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: post-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3003
+      targetPort: 3003
+      protocol: TCP
+      name: http
+  selector:
+    app: textmesh
+    component: post-service
+
+---
+# Feed Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: feed-service
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: feed-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3004
+      targetPort: 3004
+      protocol: TCP
+      name: http
+  selector:
+    app: textmesh
+    component: feed-service
+
+---
+# Group Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: group-service
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: group-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3005
+      targetPort: 3005
+      protocol: TCP
+      name: http
+  selector:
+    app: textmesh
+    component: group-service
+
+---
+# Notification Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: notification-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3006
+      targetPort: 3006
+      protocol: TCP
+      name: http
+  selector:
+    app: textmesh
+    component: notification-service
+
+---
+# Moderation Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: moderation-service
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: moderation-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3007
+      targetPort: 3007
+      protocol: TCP
+      name: http
+  selector:
+    app: textmesh
+    component: moderation-service
+
+---
+# Search Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-service
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: search-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3008
+      targetPort: 3008
+      protocol: TCP
+      name: http
+  selector:
+    app: textmesh
+    component: search-service

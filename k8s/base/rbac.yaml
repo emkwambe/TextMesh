@@ -1,0 +1,47 @@
+# =================================
+# TEXTMESH RBAC CONFIGURATION
+# =================================
+
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: textmesh-service-account
+  namespace: textmesh
+  labels:
+    app: textmesh
+
+---
+# Role for pod operations
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: textmesh-role
+  namespace: textmesh
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get"]
+
+---
+# Role Binding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: textmesh-role-binding
+  namespace: textmesh
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: textmesh-role
+subjects:
+  - kind: ServiceAccount
+    name: textmesh-service-account
+    namespace: textmesh

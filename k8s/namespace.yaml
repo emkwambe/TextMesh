@@ -1,0 +1,10 @@
+# =================================
+# TEXTMESH KUBERNETES NAMESPACE
+# =================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: textmesh
+  labels:
+    app: textmesh
+    environment: production

@@ -1,0 +1,39 @@
+# =================================
+# TEXTMESH APPLICATION CONFIGMAP
+# =================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: textmesh-config
+  namespace: textmesh
+  labels:
+    app: textmesh
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+
+  # Service ports
+  API_GATEWAY_PORT: "3000"
+  AUTH_SERVICE_PORT: "3001"
+  USER_SERVICE_PORT: "3002"
+  POST_SERVICE_PORT: "3003"
+  FEED_SERVICE_PORT: "3004"
+  GROUP_SERVICE_PORT: "3005"
+  NOTIFICATION_SERVICE_PORT: "3006"
+  MODERATION_SERVICE_PORT: "3007"
+  SEARCH_SERVICE_PORT: "3008"
+
+  # Service URLs (internal)
+  AUTH_SERVICE_URL: "http://auth-service:3001"
+  USER_SERVICE_URL: "http://user-service:3002"
+  POST_SERVICE_URL: "http://post-service:3003"
+  FEED_SERVICE_URL: "http://feed-service:3004"
+  GROUP_SERVICE_URL: "http://group-service:3005"
+  NOTIFICATION_SERVICE_URL: "http://notification-service:3006"
+  MODERATION_SERVICE_URL: "http://moderation-service:3007"
+  SEARCH_SERVICE_URL: "http://search-service:3008"
+
+  # Infrastructure URLs
+  REDIS_URL: "redis://redis-master:6379"
+  KAFKA_BROKERS: "kafka-headless:9092"
+  ELASTICSEARCH_URL: "http://elasticsearch-master:9200"

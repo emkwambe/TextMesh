@@ -1,0 +1,86 @@
+# =================================
+# POST SERVICE DEPLOYMENT
+# =================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: post-service
+  namespace: textmesh
+  labels:
+    app: textmesh
+    component: post-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: textmesh
+      component: post-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: textmesh
+        component: post-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3003"
+    spec:
+      serviceAccountName: textmesh-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+        - name: post-service
+          image: textmesh/post-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3003
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: textmesh-config
+            - secretRef:
+                name: textmesh-secrets
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: component
+                      operator: In
+                      values:
+                        - post-service
+                topologyKey: kubernetes.io/hostname

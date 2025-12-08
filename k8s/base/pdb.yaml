@@ -1,0 +1,74 @@
+# =================================
+# TEXTMESH POD DISRUPTION BUDGETS
+# Ensures high availability during updates and maintenance
+# =================================
+
+---
+# API Gateway PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-gateway-pdb
+  namespace: textmesh
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: textmesh
+      component: api-gateway
+
+---
+# Auth Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: auth-service-pdb
+  namespace: textmesh
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: textmesh
+      component: auth-service
+
+---
+# Post Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: post-service-pdb
+  namespace: textmesh
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: textmesh
+      component: post-service
+
+---
+# Feed Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: feed-service-pdb
+  namespace: textmesh
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: textmesh
+      component: feed-service
+
+---
+# Search Service PDB
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: search-service-pdb
+  namespace: textmesh
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: textmesh
+      component: search-service

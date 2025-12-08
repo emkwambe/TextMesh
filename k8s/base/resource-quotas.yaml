@@ -1,0 +1,46 @@
+# =================================
+# TEXTMESH RESOURCE QUOTAS
+# =================================
+
+---
+# Namespace Resource Quota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: textmesh-quota
+  namespace: textmesh
+spec:
+  hard:
+    requests.cpu: "50"
+    requests.memory: "100Gi"
+    limits.cpu: "100"
+    limits.memory: "200Gi"
+    pods: "200"
+    services: "50"
+    secrets: "100"
+    configmaps: "100"
+    persistentvolumeclaims: "50"
+
+---
+# Limit Range for default resource limits
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: textmesh-limits
+  namespace: textmesh
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "256Mi"
+      type: Container
+    - max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"
+      type: Container

@@ -1,0 +1,1509 @@
+openapi: 3.1.0
+info:
+  title: TextMesh API
+  description: |
+    TextMesh is a text-only social media platform designed for scale.
+
+    ## Authentication
+    Most endpoints require authentication via Bearer token. Include the JWT token in the Authorization header:
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    ## Rate Limiting
+    - Standard endpoints: 100 requests/minute
+    - Auth endpoints: 10 requests/minute
+
+    ## Pagination
+    All list endpoints support cursor-based pagination with `cursor` and `limit` parameters.
+  version: 1.0.0
+  contact:
+    name: TextMesh API Support
+    email: api@textmesh.io
+    url: https://developers.textmesh.io
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.textmesh.io/v1
+    description: Production
+  - url: https://api.staging.textmesh.io/v1
+    description: Staging
+  - url: http://localhost:3000
+    description: Development
+
+tags:
+  - name: Auth
+    description: Authentication and authorization
+  - name: Users
+    description: User management
+  - name: Posts
+    description: Post operations
+  - name: Feed
+    description: Feed and timeline
+  - name: Groups
+    description: Group management
+  - name: Notifications
+    description: Notifications
+  - name: Search
+    description: Search functionality
+  - name: Moderation
+    description: Content moderation
+
+security:
+  - BearerAuth: []
+
+paths:
+  # =================================
+  # AUTHENTICATION
+  # =================================
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Username or email already exists
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email/password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/otp/request:
+    post:
+      tags: [Auth]
+      summary: Request OTP for login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier]
+              properties:
+                identifier:
+                  type: string
+                  description: Email or phone number
+                type:
+                  type: string
+                  enum: [EMAIL, SMS]
+                  default: EMAIL
+      responses:
+        '200':
+          description: OTP sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      expiresAt:
+                        type: string
+                        format: date-time
+
+  /auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Verify OTP and login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identifier, code]
+              properties:
+                identifier:
+                  type: string
+                code:
+                  type: string
+                  pattern: '^\d{6}$'
+      responses:
+        '200':
+          description: OTP verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid or expired OTP
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout user
+      responses:
+        '200':
+          description: Logged out successfully
+
+  /auth/oauth/google:
+    post:
+      tags: [Auth]
+      summary: Authenticate with Google
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken:
+                  type: string
+      responses:
+        '200':
+          description: OAuth successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /auth/oauth/apple:
+    post:
+      tags: [Auth]
+      summary: Authenticate with Apple
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identityToken, authorizationCode]
+              properties:
+                identityToken:
+                  type: string
+                authorizationCode:
+                  type: string
+                user:
+                  type: object
+                  properties:
+                    email:
+                      type: string
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+      responses:
+        '200':
+          description: OAuth successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  # =================================
+  # USERS
+  # =================================
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+    patch:
+      tags: [Users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+
+  /users/{username}:
+    get:
+      tags: [Users]
+      summary: Get user by username
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /users/{userId}/follow:
+    post:
+      tags: [Users]
+      summary: Follow a user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Now following user
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Users]
+      summary: Unfollow a user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Unfollowed user
+
+  /users/{userId}/followers:
+    get:
+      tags: [Users]
+      summary: Get user's followers
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of followers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+  /users/{userId}/following:
+    get:
+      tags: [Users]
+      summary: Get users followed by user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of following
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+  /users/{userId}/block:
+    post:
+      tags: [Users]
+      summary: Block a user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User blocked
+
+    delete:
+      tags: [Users]
+      summary: Unblock a user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User unblocked
+
+  /users/{userId}/mute:
+    post:
+      tags: [Users]
+      summary: Mute a user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User muted
+
+    delete:
+      tags: [Users]
+      summary: Unmute a user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User unmuted
+
+  # =================================
+  # POSTS
+  # =================================
+  /posts:
+    post:
+      tags: [Posts]
+      summary: Create a new post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /posts/{postId}:
+    get:
+      tags: [Posts]
+      summary: Get a post by ID
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Post details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Posts]
+      summary: Delete a post
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Post deleted
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /posts/{postId}/like:
+    post:
+      tags: [Posts]
+      summary: Like a post
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Post liked
+
+    delete:
+      tags: [Posts]
+      summary: Unlike a post
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Post unliked
+
+  /posts/{postId}/repost:
+    post:
+      tags: [Posts]
+      summary: Repost a post
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                  maxLength: 500
+                  description: Optional quote text
+      responses:
+        '201':
+          description: Reposted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+
+    delete:
+      tags: [Posts]
+      summary: Undo repost
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Repost removed
+
+  /posts/{postId}/bookmark:
+    post:
+      tags: [Posts]
+      summary: Bookmark a post
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Post bookmarked
+
+    delete:
+      tags: [Posts]
+      summary: Remove bookmark
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      responses:
+        '200':
+          description: Bookmark removed
+
+  /posts/{postId}/replies:
+    get:
+      tags: [Posts]
+      summary: Get replies to a post
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of replies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResponse'
+
+    post:
+      tags: [Posts]
+      summary: Reply to a post
+      parameters:
+        - $ref: '#/components/parameters/PostId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePostRequest'
+      responses:
+        '201':
+          description: Reply created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostResponse'
+
+  /users/{userId}/posts:
+    get:
+      tags: [Posts]
+      summary: Get user's posts
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: includeReplies
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: User's posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResponse'
+
+  /users/me/bookmarks:
+    get:
+      tags: [Posts]
+      summary: Get user's bookmarked posts
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Bookmarked posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResponse'
+
+  # =================================
+  # FEED
+  # =================================
+  /feed/home:
+    get:
+      tags: [Feed]
+      summary: Get home feed
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Home feed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResponse'
+
+  /feed/discover:
+    get:
+      tags: [Feed]
+      summary: Get discover feed
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Discover feed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResponse'
+
+  /feed/hashtag/{tag}:
+    get:
+      tags: [Feed]
+      summary: Get posts by hashtag
+      parameters:
+        - name: tag
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Posts with hashtag
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResponse'
+
+  # =================================
+  # GROUPS
+  # =================================
+  /groups:
+    get:
+      tags: [Groups]
+      summary: List groups
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of groups
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+
+    post:
+      tags: [Groups]
+      summary: Create a group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupRequest'
+      responses:
+        '201':
+          description: Group created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponse'
+
+  /groups/{groupId}:
+    get:
+      tags: [Groups]
+      summary: Get group details
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Group details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Groups]
+      summary: Update group
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupRequest'
+      responses:
+        '200':
+          description: Group updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponse'
+
+    delete:
+      tags: [Groups]
+      summary: Delete group
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Group deleted
+
+  /groups/{groupId}/join:
+    post:
+      tags: [Groups]
+      summary: Join a group
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Joined group
+
+  /groups/{groupId}/leave:
+    post:
+      tags: [Groups]
+      summary: Leave a group
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+      responses:
+        '200':
+          description: Left group
+
+  /groups/{groupId}/members:
+    get:
+      tags: [Groups]
+      summary: Get group members
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Group members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupMemberListResponse'
+
+  /groups/{groupId}/feed:
+    get:
+      tags: [Groups]
+      summary: Get group feed
+      parameters:
+        - $ref: '#/components/parameters/GroupId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Group posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostListResponse'
+
+  # =================================
+  # NOTIFICATIONS
+  # =================================
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Get notifications
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationListResponse'
+
+  /notifications/mark-read:
+    post:
+      tags: [Notifications]
+      summary: Mark notifications as read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notificationIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                all:
+                  type: boolean
+                  description: Mark all as read
+      responses:
+        '200':
+          description: Notifications marked as read
+
+  /notifications/push-token:
+    post:
+      tags: [Notifications]
+      summary: Register push token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, platform]
+              properties:
+                token:
+                  type: string
+                platform:
+                  type: string
+                  enum: [IOS, ANDROID, WEB]
+      responses:
+        '200':
+          description: Token registered
+
+  # =================================
+  # SEARCH
+  # =================================
+  /search:
+    get:
+      tags: [Search]
+      summary: Global search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 2
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, users, posts, groups, hashtags]
+            default: all
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+
+  /search/users:
+    get:
+      tags: [Search]
+      summary: Search users
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: User search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+  /search/trending/hashtags:
+    get:
+      tags: [Search]
+      summary: Get trending hashtags
+      responses:
+        '200':
+          description: Trending hashtags
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      hashtags:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tag:
+                              type: string
+                            postCount:
+                              type: integer
+
+  # =================================
+  # MODERATION
+  # =================================
+  /reports:
+    post:
+      tags: [Moderation]
+      summary: Report content
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReportRequest'
+      responses:
+        '201':
+          description: Report submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PostId:
+      name: postId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    GroupId:
+      name: groupId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    Cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # Auth
+    RegisterRequest:
+      type: object
+      required: [username, email, password, dateOfBirth]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: '^[a-zA-Z0-9_]+$'
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        dateOfBirth:
+          type: string
+          format: date
+        displayName:
+          type: string
+          maxLength: 50
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            accessToken:
+              type: string
+            refreshToken:
+              type: string
+            expiresIn:
+              type: integer
+            user:
+              $ref: '#/components/schemas/User'
+
+    # Users
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+        bio:
+          type: string
+        isVerified:
+          type: boolean
+        followerCount:
+          type: integer
+        followingCount:
+          type: integer
+        postCount:
+          type: integer
+        isFollowing:
+          type: boolean
+        isBlocked:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          maxLength: 50
+        bio:
+          type: string
+          maxLength: 160
+        avatarUrl:
+          type: string
+          format: uri
+        websiteUrl:
+          type: string
+          format: uri
+        location:
+          type: string
+          maxLength: 100
+
+    UserResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/User'
+
+    UserListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+            nextCursor:
+              type: string
+              nullable: true
+            hasMore:
+              type: boolean
+
+    # Posts
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        visibility:
+          type: string
+          enum: [PUBLIC, FOLLOWERS, PRIVATE]
+        user:
+          $ref: '#/components/schemas/User'
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        quotedPostId:
+          type: string
+          format: uuid
+          nullable: true
+        quotedPost:
+          $ref: '#/components/schemas/Post'
+        groupId:
+          type: string
+          format: uuid
+          nullable: true
+        likeCount:
+          type: integer
+        replyCount:
+          type: integer
+        repostCount:
+          type: integer
+        isLiked:
+          type: boolean
+        isReposted:
+          type: boolean
+        isBookmarked:
+          type: boolean
+        hashtags:
+          type: array
+          items:
+            type: string
+        mentions:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreatePostRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 500
+        visibility:
+          type: string
+          enum: [PUBLIC, FOLLOWERS, PRIVATE]
+          default: PUBLIC
+        groupId:
+          type: string
+          format: uuid
+
+    PostResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Post'
+
+    PostListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Post'
+            nextCursor:
+              type: string
+              nullable: true
+            hasMore:
+              type: boolean
+
+    # Groups
+    Group:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+        privacy:
+          type: string
+          enum: [PUBLIC, PRIVATE, SECRET]
+        memberCount:
+          type: integer
+        postCount:
+          type: integer
+        isMember:
+          type: boolean
+        memberRole:
+          type: string
+          enum: [OWNER, ADMIN, MODERATOR, MEMBER]
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateGroupRequest:
+      type: object
+      required: [name, privacy]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        privacy:
+          type: string
+          enum: [PUBLIC, PRIVATE, SECRET]
+        rules:
+          type: string
+
+    UpdateGroupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+        rules:
+          type: string
+
+    GroupResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Group'
+
+    GroupListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Group'
+            nextCursor:
+              type: string
+              nullable: true
+            hasMore:
+              type: boolean
+
+    GroupMember:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        role:
+          type: string
+          enum: [OWNER, ADMIN, MODERATOR, MEMBER]
+        joinedAt:
+          type: string
+          format: date-time
+
+    GroupMemberListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/GroupMember'
+            nextCursor:
+              type: string
+              nullable: true
+            hasMore:
+              type: boolean
+
+    # Notifications
+    Notification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [FOLLOW, LIKE, REPLY, MENTION, REPOST, GROUP_INVITE]
+        actor:
+          $ref: '#/components/schemas/User'
+        postId:
+          type: string
+          format: uuid
+          nullable: true
+        groupId:
+          type: string
+          format: uuid
+          nullable: true
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    NotificationListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Notification'
+            nextCursor:
+              type: string
+              nullable: true
+            hasMore:
+              type: boolean
+            unreadCount:
+              type: integer
+
+    # Search
+    SearchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            users:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/User'
+                hasMore:
+                  type: boolean
+            posts:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Post'
+                hasMore:
+                  type: boolean
+            groups:
+              type: object
+              properties:
+                items:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Group'
+                hasMore:
+                  type: boolean
+            hashtags:
+              type: array
+              items:
+                type: string
+
+    # Moderation
+    CreateReportRequest:
+      type: object
+      required: [targetType, targetId, reason]
+      properties:
+        targetType:
+          type: string
+          enum: [POST, USER, GROUP, COMMENT]
+        targetId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          enum: [SPAM, HARASSMENT, HATE_SPEECH, VIOLENCE, SEXUAL_CONTENT, MISINFORMATION, OTHER]
+        description:
+          type: string
+          maxLength: 1000
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        targetType:
+          type: string
+        targetId:
+          type: string
+          format: uuid
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, REVIEWING, RESOLVED, DISMISSED]
+        createdAt:
+          type: string
+          format: date-time
+
+    ReportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Report'
+
+    # Error
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
