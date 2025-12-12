@@ -40,8 +40,10 @@ export class APNSProvider {
     apnsNotification.sound = 'default';
     apnsNotification.topic = this.bundleId;
     apnsNotification.payload = notification.data || {};
-    apnsNotification.category = notification.category;
-    apnsNotification.threadId = notification.collapseKey;
+    (apnsNotification as unknown as { category: string }).category = notification.category;
+    if (notification.collapseKey) {
+      apnsNotification.threadId = notification.collapseKey;
+    }
     apnsNotification.expiry = Math.floor(Date.now() / 1000) + (notification.ttl || 86400);
     apnsNotification.priority = notification.priority === 'high' ? 10 : 5;
 

@@ -1,4 +1,5 @@
 import Handlebars from 'handlebars';
+// @ts-ignore - mjml doesn't have type declarations
 import mjml2html from 'mjml';
 import { convert } from 'html-to-text';
 import { Redis } from 'ioredis';
@@ -92,7 +93,7 @@ export class TemplateEngine {
       });
 
       if (result.errors.length > 0) {
-        const errors = result.errors.map((e) => e.formattedMessage).join('\n');
+        const errors = result.errors.map((e: { formattedMessage: string }) => e.formattedMessage).join('\n');
         throw new Error(`MJML compilation errors:\n${errors}`);
       }
 

@@ -109,12 +109,19 @@ export class UserManagementService {
     user.banHistory.push(banRecord);
     await this.saveUser(user);
 
-    await this.redis.set(
-      `${this.banPrefix}${userId}`,
-      JSON.stringify(banRecord),
-      options.duration ? 'EX' : 'KEEPTTL',
-      options.duration || 0
-    );
+    if (options.duration) {
+      await this.redis.set(
+        `${this.banPrefix}${userId}`,
+        JSON.stringify(banRecord),
+        'EX',
+        options.duration
+      );
+    } else {
+      await this.redis.set(
+        `${this.banPrefix}${userId}`,
+        JSON.stringify(banRecord)
+      );
+    }
 
     await this.logAction({
       adminId,

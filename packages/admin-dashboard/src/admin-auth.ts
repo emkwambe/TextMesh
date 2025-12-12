@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {
   AdminUser,

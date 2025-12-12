@@ -169,7 +169,7 @@ export class LeaderboardManager {
     return this.redis.zcard(key);
   }
 
-  async createTimeframeLeaderboard(
+  createTimeframeLeaderboard(
     baseId: string,
     timeframe: LeaderboardTimeframe
   ): string {

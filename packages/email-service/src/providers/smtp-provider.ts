@@ -16,7 +16,7 @@ export class SMTPProvider {
       auth: config.auth,
       pool: config.pool,
       maxConnections: config.maxConnections,
-    });
+    } as nodemailer.TransportOptions);
   }
 
   async send(email: Email): Promise<{ messageId: string; success: boolean }> {

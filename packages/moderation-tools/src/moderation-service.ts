@@ -284,7 +284,7 @@ export class ModerationService {
     const appeal = await this.getAppeal(appealId);
     if (!appeal) return false;
 
-    appeal.status = decision.outcome === 'denied' ? 'denied' : 'approved';
+    appeal.status = decision.outcome === 'upheld' ? 'denied' : 'approved';
     appeal.decision = {
       ...decision,
       reviewedBy: moderatorId,

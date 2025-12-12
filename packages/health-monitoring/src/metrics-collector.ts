@@ -225,7 +225,8 @@ export class MetricsCollector {
 
   async incrementCounter(name: string, value: number = 1): Promise<number> {
     const key = `${this.metricsPrefix}counter:${name}`;
-    const newValue = await this.redis.incrbyfloat(key, value);
+    const result = await this.redis.incrbyfloat(key, value);
+    const newValue = parseFloat(result);
     await this.recordMetric(`counter.${name}`, newValue);
     return newValue;
   }
