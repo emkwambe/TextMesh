@@ -11,7 +11,7 @@
 import { PrismaClient } from '@prisma/client';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('db-replica');
+const logger = createLogger({ service: 'db-replica', level: 'info' });
 
 // Configuration
 interface ReplicaConfig {

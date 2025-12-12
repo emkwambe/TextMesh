@@ -10,9 +10,16 @@
 
 import { PrismaClient } from '@prisma/client';
 import { createLogger } from '@textmesh/logger';
-import { redis } from './redis';
+import Redis from 'ioredis';
 
-const logger = createLogger('connection-pool');
+const logger = createLogger({ service: 'connection-pool', level: 'info' });
+
+// Get redis instance lazily to avoid circular imports
+function getRedis(): Redis {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { getRedisClient } = require('./index');
+  return getRedisClient();
+}
 
 interface PoolMetrics {
   activeConnections: number;
@@ -145,7 +152,7 @@ export class ConnectionPool {
         const latency = Date.now() - start;
 
         // Store metrics in Redis for monitoring
-        await redis.hset('db:pool:metrics', {
+        await getRedis().hset('db:pool:metrics', {
           latency: latency.toString(),
           lastCheck: new Date().toISOString(),
           status: 'healthy',
@@ -158,7 +165,7 @@ export class ConnectionPool {
       } catch (error) {
         logger.error('Database health check failed', { error });
 
-        await redis.hset('db:pool:metrics', {
+        await getRedis().hset('db:pool:metrics', {
           lastCheck: new Date().toISOString(),
           status: 'unhealthy',
           error: (error as Error).message,

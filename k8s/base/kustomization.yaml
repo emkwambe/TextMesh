@@ -1,0 +1,89 @@
+# ===========================================
+# TextMesh Kubernetes Base Kustomization
+# ===========================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: textmesh
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/part-of: textmesh
+  app.kubernetes.io/managed-by: kustomize
+
+# Base resources
+resources:
+  # Namespace
+  - ../namespace.yaml
+
+  # RBAC
+  - rbac.yaml
+
+  # Pod Disruption Budgets
+  - pdb.yaml
+
+  # Resource Quotas
+  - resource-quotas.yaml
+
+  # Infrastructure
+  - ../postgres
+  - ../redis
+  - ../kafka
+  - ../elasticsearch
+
+  # Core Services
+  - ../auth-service
+  - ../user-service
+  - ../post-service
+  - ../feed-service
+  - ../notification-service
+  - ../group-service
+  - ../search-service
+  - ../moderation-service
+
+  # API Gateway
+  - ../api-gateway
+
+  # ConfigMaps
+  - ../configmaps
+
+  # Secrets
+  - ../secrets
+
+  # Services (ClusterIP/LoadBalancer)
+  - ../services
+
+  # Ingress
+  - ../ingress
+
+  # Horizontal Pod Autoscalers
+  - ../hpa
+
+# Config Map Generator
+configMapGenerator:
+  - name: textmesh-common-config
+    literals:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - TZ=UTC
+
+# Images - override in overlays
+images:
+  - name: textmesh/auth-service
+    newTag: latest
+  - name: textmesh/user-service
+    newTag: latest
+  - name: textmesh/post-service
+    newTag: latest
+  - name: textmesh/feed-service
+    newTag: latest
+  - name: textmesh/notification-service
+    newTag: latest
+  - name: textmesh/group-service
+    newTag: latest
+  - name: textmesh/search-service
+    newTag: latest
+  - name: textmesh/moderation-service
+    newTag: latest
+  - name: textmesh/api-gateway
+    newTag: latest
