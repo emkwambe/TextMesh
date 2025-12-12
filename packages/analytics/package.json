@@ -1,0 +1,26 @@
+{
+  "name": "@textmesh/analytics",
+  "version": "1.0.0",
+  "description": "Analytics pipeline for TextMesh",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@textmesh/logger": "workspace:*",
+    "@textmesh/cache-layer": "workspace:*",
+    "kafkajs": "^2.2.4",
+    "ioredis": "^5.3.2",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@textmesh/logger": "workspace:*"
+  }
+}
