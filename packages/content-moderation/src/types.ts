@@ -13,14 +13,17 @@ export type ModerationCategory =
   | 'sexual'
   | 'dangerous'
   | 'pii'
-  | 'malicious_link';
+  | 'malicious_link'
+  | 'scam';
 
 export type ModerationAction =
   | 'allow'
   | 'flag'
   | 'hide'
   | 'remove'
-  | 'ban';
+  | 'ban'
+  | 'block'
+  | 'redact';
 
 export type ContentType =
   | 'post'
@@ -34,19 +37,39 @@ export type ContentType =
 export interface ModerationResult {
   approved: boolean;
   action: ModerationAction;
-  scores: Record<ModerationCategory, number>;
+  scores: Record<string, number>;
   categories: ModerationCategory[];
   reasons: string[];
   confidence: number;
   processingTime: number;
 }
 
+export interface CategoryConfig {
+  threshold?: number;
+  enabled: boolean;
+  action?: ModerationAction;
+  types?: string[];
+  blockMalicious?: boolean;
+  warnSuspicious?: boolean;
+}
+
 export interface ModerationConfig {
-  thresholds: Record<ModerationCategory, number>;
-  actions: Record<ModerationCategory, ModerationAction>;
-  enabledChecks: ModerationCategory[];
-  autoAction: boolean;
-  appealable: boolean;
+  thresholds?: Record<string, number>;
+  actions?: Record<string, ModerationAction>;
+  enabledChecks?: ModerationCategory[];
+  autoAction?: boolean;
+  appealable?: boolean;
+  toxicity?: CategoryConfig;
+  spam?: CategoryConfig;
+  nsfw?: CategoryConfig;
+  pii?: CategoryConfig & { types?: PIIType[] };
+  links?: CategoryConfig;
+  autoModeration?: {
+    enabled: boolean;
+    threshold?: number;
+    escalateToHuman?: boolean;
+    escalationThreshold?: number;
+  };
 }
 
 export interface ContentToModerate {
@@ -94,10 +117,32 @@ export interface SpamSignals {
   authorTrustScore: number;
 }
 
+// PIIType supports both snake_case and camelCase for compatibility
+export type PIIType =
+  | 'email'
+  | 'phone'
+  | 'ssn'
+  | 'credit_card'
+  | 'creditCard'
+  | 'address'
+  | 'ip_address'
+  | 'ipAddress'
+  | 'name'
+  | 'date_of_birth'
+  | 'dateOfBirth'
+  | 'passport'
+  | 'driver_license'
+  | 'driverLicense'
+  | 'bankAccount';
+
+export type PIISeverity = 'low' | 'medium' | 'high' | 'critical';
+
 export interface PIIMatch {
-  type: 'email' | 'phone' | 'ssn' | 'credit_card' | 'address' | 'ip_address';
+  type: PIIType;
   value: string;
   start: number;
   end: number;
   confidence: number;
+  severity?: PIISeverity;
 }
+

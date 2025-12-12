@@ -32,7 +32,7 @@ export class QuarantineService {
   /**
    * Quarantine content
    */
-  async quarantine(
+  async quarantineContent(
     contentId: string,
     contentType: ContentSource,
     content: string,

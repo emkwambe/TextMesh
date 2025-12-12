@@ -17,7 +17,7 @@ import { PIIMatch, PIIType } from './types';
 const logger = createLogger({ service: 'pii-detector', level: 'info' });
 
 // PII detection patterns
-const PII_PATTERNS: Record<PIIType, RegExp[]> = {
+const PII_PATTERNS: Record<string, RegExp[]> = {
   email: [
     /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
     /\b[A-Za-z0-9._%+-]+\s*\[at\]\s*[A-Za-z0-9.-]+\s*\[dot\]\s*[A-Z|a-z]{2,}\b/gi,
@@ -81,7 +81,7 @@ const NAME_INDICATORS = [
 ];
 
 // Severity levels for different PII types
-const PII_SEVERITY: Record<PIIType, 'low' | 'medium' | 'high' | 'critical'> = {
+const PII_SEVERITY: Record<string, 'low' | 'medium' | 'high' | 'critical'> = {
   email: 'medium',
   phone: 'medium',
   ssn: 'critical',
@@ -448,13 +448,13 @@ export class PIIDetector {
    */
   getSummary(text: string): {
     total: number;
-    byType: Record<PIIType, number>;
+    byType: Record<string, number>;
     bySeverity: Record<string, number>;
     hasHighRisk: boolean;
   } {
     const matches = this.detect(text);
 
-    const byType: Record<PIIType, number> = {
+    const byType: Record<string, number> = {
       email: 0,
       phone: 0,
       ssn: 0,
@@ -477,7 +477,8 @@ export class PIIDetector {
 
     for (const match of matches) {
       byType[match.type]++;
-      bySeverity[match.severity]++;
+      const severity = match.severity || 'low';
+      bySeverity[severity]++;
     }
 
     return {

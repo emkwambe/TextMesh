@@ -135,7 +135,7 @@ export class SpamFilterService {
 
       // Quarantine if enabled
       if (this.config.quarantineEnabled && confidence < this.config.autoDeleteThreshold) {
-        await this.quarantineService.quarantine(
+        await this.quarantineService.quarantineContent(
           request.contentId,
           request.contentType,
           request.content,

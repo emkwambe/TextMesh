@@ -4,14 +4,14 @@
  * Microservice for spam detection and filtering
  */
 
-import express from 'express';
+import express, { Express } from 'express';
 import { createLogger } from '@textmesh/logger';
 import { v4 as uuidv4 } from 'uuid';
-import { spamFilterService, SpamFilterService } from './services/spam-filter.service';
+import { spamFilterService } from './services/spam-filter.service';
 import { SpamFilterRequest, ContentSource } from './types';
 
 const logger = createLogger({ service: 'spam-filtering-service', level: 'info' });
-const app = express();
+const app: Express = express();
 
 app.use(express.json());
 

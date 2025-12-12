@@ -237,6 +237,8 @@ export class ModerationPipeline {
       categories,
       reasons,
       confidence,
+      scores: {},
+      processingTime: Date.now() - startTime,
       processedContent,
       escalated,
       moderationTime: Date.now() - startTime,
@@ -331,7 +333,10 @@ export class ModerationPipeline {
    */
   private escalateAction(current: ModerationAction, newAction: ModerationAction): ModerationAction {
     const priority: Record<ModerationAction, number> = {
+      ban: 5,
+      remove: 4,
       block: 3,
+      hide: 2,
       redact: 2,
       flag: 1,
       allow: 0,
