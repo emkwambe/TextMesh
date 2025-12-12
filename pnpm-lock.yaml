@@ -222,6 +222,25 @@ importers:
         specifier: ^5.1.6
         version: 5.9.3
 
+  packages/compliance:
+    dependencies:
+      ioredis:
+        specifier: ^5.3.0
+        version: 5.8.2
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.25
+      '@types/uuid':
+        specifier: ^9.0.0
+        version: 9.0.8
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   packages/config:
     dependencies:
       dotenv:
@@ -285,6 +304,25 @@ importers:
         version: 2.0.0(@types/node@20.19.25)(typescript@5.9.3)
       typescript:
         specifier: ^5.1.6
+        version: 5.9.3
+
+  packages/content-quality:
+    dependencies:
+      ioredis:
+        specifier: ^5.3.0
+        version: 5.8.2
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.25
+      '@types/uuid':
+        specifier: ^9.0.0
+        version: 9.0.8
+      typescript:
+        specifier: ^5.0.0
         version: 5.9.3
 
   packages/db-client:
@@ -469,6 +507,25 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
+  packages/monetization:
+    dependencies:
+      ioredis:
+        specifier: ^5.3.0
+        version: 5.8.2
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.25
+      '@types/uuid':
+        specifier: ^9.0.0
+        version: 9.0.8
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   packages/push-notifications:
     dependencies:
       apn:
@@ -584,6 +641,25 @@ importers:
         specifier: workspace:*
         version: link:../logger
     devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
+  packages/user-safety:
+    dependencies:
+      ioredis:
+        specifier: ^5.3.0
+        version: 5.8.2
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.25
+      '@types/uuid':
+        specifier: ^9.0.0
+        version: 9.0.8
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
