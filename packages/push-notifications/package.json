@@ -1,0 +1,25 @@
+{
+  "name": "@textmesh/push-notifications",
+  "version": "1.0.0",
+  "description": "Push notification service for web and mobile",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "web-push": "^3.6.0",
+    "apn": "^2.2.0",
+    "ioredis": "^5.3.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/web-push": "^3.6.0",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.0.0"
+  }
+}
