@@ -1,0 +1,24 @@
+{
+  "name": "@textmesh/cache-layer",
+  "version": "1.0.0",
+  "description": "TextMesh advanced multi-tier caching layer",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@textmesh/logger": "workspace:*",
+    "ioredis": "^5.3.2",
+    "lru-cache": "^10.0.1",
+    "msgpack-lite": "^0.1.26"
+  },
+  "devDependencies": {
+    "@types/msgpack-lite": "^0.1.8",
+    "@types/node": "^20.4.2",
+    "typescript": "^5.1.6"
+  }
+}
