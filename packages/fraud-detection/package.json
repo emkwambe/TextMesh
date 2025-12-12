@@ -1,0 +1,27 @@
+{
+  "name": "@textmesh/fraud-detection",
+  "version": "1.0.0",
+  "description": "Fraud detection system for TextMesh",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@textmesh/logger": "workspace:*",
+    "@textmesh/cache-layer": "workspace:*",
+    "uuid": "^9.0.0",
+    "maxmind": "^4.3.0",
+    "geoip-lite": "^1.4.7"
+  },
+  "devDependencies": {
+    "@types/geoip-lite": "^1.4.2",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@textmesh/logger": "workspace:*"
+  }
+}

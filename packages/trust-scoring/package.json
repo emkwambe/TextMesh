@@ -1,0 +1,22 @@
+{
+  "name": "@textmesh/trust-scoring",
+  "version": "1.0.0",
+  "description": "Trust scoring system for TextMesh users",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@textmesh/logger": "workspace:*",
+    "@textmesh/cache-layer": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@textmesh/logger": "workspace:*"
+  }
+}
