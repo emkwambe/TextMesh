@@ -12,7 +12,7 @@
 import sharp from 'sharp';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('image-processor');
+const logger = createLogger({ service: 'image-processor' });
 
 export interface ImageSize {
   width: number;

@@ -8,12 +8,12 @@
  * - Update metadata
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { mediaService } from '../services/media.service';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('media-routes');
-const router = Router();
+const logger = createLogger({ service: 'media-routes' });
+const router: IRouter = Router();
 
 // Middleware to get user from token (simplified)
 const getUserId = (req: Request): string => {

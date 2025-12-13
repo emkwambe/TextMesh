@@ -16,7 +16,7 @@ import path from 'path';
 import os from 'os';
 import { v4 as uuid } from 'uuid';
 
-const logger = createLogger('video-processor');
+const logger = createLogger({ service: 'video-processor' });
 
 export interface VideoMetadata {
   duration: number;
@@ -96,12 +96,12 @@ export class VideoProcessor {
           duration: metadata.format.duration || 0,
           width: videoStream.width || 0,
           height: videoStream.height || 0,
-          bitrate: parseInt(metadata.format.bit_rate || '0', 10),
+          bitrate: parseInt(String(metadata.format.bit_rate || '0'), 10),
           codec: videoStream.codec_name || 'unknown',
           fps: eval(videoStream.r_frame_rate || '0') || 0,
           audioCodec: audioStream?.codec_name,
           audioChannels: audioStream?.channels,
-          audioSampleRate: audioStream?.sample_rate ? parseInt(audioStream.sample_rate, 10) : undefined,
+          audioSampleRate: audioStream?.sample_rate ? parseInt(String(audioStream.sample_rate), 10) : undefined,
           size: metadata.format.size || 0,
         });
       });
@@ -224,7 +224,7 @@ export class VideoProcessor {
         // Single thumbnail at specific timestamp
         command
           .screenshots({
-            timestamps: [timestamp],
+            timestamps: [timestamp] as string[],
             filename: 'thumb.jpg',
             folder: outputDir,
             size: height ? `${width}x${height}` : `${width}x?`,

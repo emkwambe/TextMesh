@@ -21,7 +21,7 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { createLogger } from '@textmesh/logger';
 import { Readable } from 'stream';
 
-const logger = createLogger('s3-provider');
+const logger = createLogger({ service: 's3-provider' });
 
 export interface S3Config {
   bucket: string;
@@ -314,7 +314,7 @@ export class S3Provider {
    * Generate a unique key for a file
    */
   generateKey(
-    type: 'images' | 'videos' | 'thumbnails' | 'avatars' | 'attachments',
+    type: 'images' | 'videos' | 'thumbnails' | 'avatars' | 'attachments' | 'uploads',
     userId: string,
     filename: string
   ): string {

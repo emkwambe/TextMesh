@@ -7,7 +7,7 @@
 import { redis, prisma } from '@textmesh/db-client';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('presence-service');
+const logger = createLogger({ service: 'presence-service' });
 
 const PRESENCE_TTL = 120; // 2 minutes
 const TYPING_TTL = 5; // 5 seconds

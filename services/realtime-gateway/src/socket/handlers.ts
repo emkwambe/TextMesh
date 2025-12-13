@@ -6,12 +6,12 @@
 
 import { Server } from 'socket.io';
 import { createLogger } from '@textmesh/logger';
-import { publishEvent } from '@textmesh/event-bus';
+import { publishEvent, EventType } from '@textmesh/event-bus';
 import { AuthenticatedSocket } from './server';
 import { PresenceManager } from '../services/presence.service';
 import { RoomManager } from '../services/room.service';
 
-const logger = createLogger('socket-handlers');
+const logger = createLogger({ service: 'socket-handlers' });
 
 export function registerSocketHandlers(
   io: Server,
@@ -101,7 +101,7 @@ export function registerSocketHandlers(
   // Mark messages as read
   socket.on('messages:read', async (data: { conversationId: string; messageId?: string }) => {
     // Publish event for message service to handle
-    await publishEvent('message.read', {
+    await publishEvent(EventType.MESSAGE_READ, {
       userId,
       conversationId: data.conversationId,
       upToMessageId: data.messageId,
@@ -123,7 +123,7 @@ export function registerSocketHandlers(
 
   // Mark notification as read
   socket.on('notification:read', async (data: { notificationId: string }) => {
-    await publishEvent('notification.read', {
+    await publishEvent(EventType.NOTIFICATION_READ, {
       userId,
       notificationId: data.notificationId,
     });
@@ -131,7 +131,7 @@ export function registerSocketHandlers(
 
   // Mark all notifications as read
   socket.on('notifications:read-all', async () => {
-    await publishEvent('notification.read-all', { userId });
+    await publishEvent(EventType.NOTIFICATION_READ_ALL, { userId });
   });
 
   // ==================

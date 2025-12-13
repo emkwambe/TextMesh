@@ -5,7 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('media-http');
+const logger = createLogger({ service: 'media-http' });
 
 export function requestLogger(req: Request, res: Response, next: NextFunction): void {
   const start = Date.now();

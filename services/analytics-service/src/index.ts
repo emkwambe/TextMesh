@@ -3,11 +3,11 @@
 // Platform Metrics & Dashboards
 // =================================
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response, Application } from 'express';
 import { createLogger } from '@textmesh/logger';
 import { getRedisClient, getPrismaClient } from '@textmesh/db-client';
 
-const app = express();
+const app: Application = express();
 const logger = createLogger({ service: 'analytics-service' });
 const PORT = process.env['PORT'] || 3012;
 
@@ -278,8 +278,8 @@ app.get('/api/analytics/dashboard/:dashboardId', async (req: Request, res: Respo
 // Create custom dashboard
 app.post('/api/analytics/dashboard', async (req: Request, res: Response) => {
   try {
-    const config = req.body as DashboardConfig;
-    const dashboard = await dashboardBuilder.createDashboard(config);
+    const config = req.body;
+    const dashboard = await dashboardBuilder.createDashboard(config as any);
 
     res.json({
       success: true,
@@ -329,8 +329,8 @@ app.get('/api/analytics/reports', async (_req: Request, res: Response) => {
 // Track event
 app.post('/api/analytics/track', async (req: Request, res: Response) => {
   try {
-    const event = req.body as AnalyticsEvent;
-    await realtimeTracker.trackEvent(event);
+    const event = req.body;
+    await realtimeTracker.trackEvent(event as any);
 
     res.json({ success: true });
   } catch (error) {

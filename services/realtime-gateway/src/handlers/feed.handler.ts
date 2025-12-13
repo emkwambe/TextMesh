@@ -12,7 +12,7 @@ import { createLogger } from '@textmesh/logger';
 import { redis } from '@textmesh/db-client';
 import { emitToUser, emitToRoom } from '../socket/server';
 
-const logger = createLogger('feed-handler');
+const logger = createLogger({ service: 'feed-handler' });
 
 export interface PostEvent {
   id: string;

@@ -10,7 +10,7 @@
 import { prisma, redis } from '@textmesh/db-client';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('room-service');
+const logger = createLogger({ service: 'room-service' });
 
 export class RoomManager {
   /**

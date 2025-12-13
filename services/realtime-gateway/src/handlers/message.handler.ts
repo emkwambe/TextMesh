@@ -8,7 +8,7 @@ import { Server } from 'socket.io';
 import { createLogger } from '@textmesh/logger';
 import { emitToConversation, emitToUser } from '../socket/server';
 
-const logger = createLogger('message-handler');
+const logger = createLogger({ service: 'message-handler' });
 
 export interface MessageEvent {
   id: string;

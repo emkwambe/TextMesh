@@ -7,13 +7,13 @@
  * - Upload confirmation
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import multer from 'multer';
 import { mediaService } from '../services/media.service';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('upload-routes');
-const router = Router();
+const logger = createLogger({ service: 'upload-routes' });
+const router: IRouter = Router();
 
 // Configure multer for memory storage
 const upload = multer({

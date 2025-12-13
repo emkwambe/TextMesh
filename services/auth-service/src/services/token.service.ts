@@ -52,10 +52,10 @@ export class TokenService {
     };
 
     return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: ACCESS_TOKEN_EXPIRY,
+      expiresIn: ACCESS_TOKEN_EXPIRY as string,
       issuer: JWT_ISSUER,
       algorithm: 'HS256',
-    });
+    } as jwt.SignOptions);
   }
 
   generateRefreshToken(userId: string, sessionId: string): string {
@@ -68,10 +68,10 @@ export class TokenService {
     };
 
     return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: REFRESH_TOKEN_EXPIRY,
+      expiresIn: REFRESH_TOKEN_EXPIRY as string,
       issuer: JWT_ISSUER,
       algorithm: 'HS256',
-    });
+    } as jwt.SignOptions);
   }
 
   async verifyAccessToken(token: string): Promise<AccessTokenPayload> {

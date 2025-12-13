@@ -9,7 +9,7 @@
  * - Live updates (posts, comments, likes)
  */
 
-import express from 'express';
+import express, { Application } from 'express';
 import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -24,10 +24,10 @@ import { NotificationHandler } from './handlers/notification.handler';
 import { MessageHandler } from './handlers/message.handler';
 import { FeedHandler } from './handlers/feed.handler';
 
-const logger = createLogger('realtime-gateway');
+const logger = createLogger({ service: 'realtime-gateway' });
 const PORT = process.env.PORT || 3020;
 
-const app = express();
+const app: Application = express();
 const httpServer = createServer(app);
 
 // Express middleware
@@ -97,35 +97,35 @@ async function start() {
     const feedHandler = new FeedHandler(io);
 
     // Subscribe to Kafka events
-    await subscribeToEvent('notification.created', (data) => {
+    subscribeToEvent('notification.created', async (data: any) => {
       notificationHandler.handleNotification(data);
     });
 
-    await subscribeToEvent('message.sent', (data) => {
+    subscribeToEvent('message.sent', async (data: any) => {
       messageHandler.handleNewMessage(data);
     });
 
-    await subscribeToEvent('message.updated', (data) => {
+    subscribeToEvent('message.updated', async (data: any) => {
       messageHandler.handleMessageUpdate(data);
     });
 
-    await subscribeToEvent('message.deleted', (data) => {
+    subscribeToEvent('message.deleted', async (data: any) => {
       messageHandler.handleMessageDelete(data);
     });
 
-    await subscribeToEvent('post.created', (data) => {
+    subscribeToEvent('post.created', async (data: any) => {
       feedHandler.handleNewPost(data);
     });
 
-    await subscribeToEvent('post.liked', (data) => {
+    subscribeToEvent('post.liked', async (data: any) => {
       feedHandler.handlePostLike(data);
     });
 
-    await subscribeToEvent('post.commented', (data) => {
+    subscribeToEvent('post.commented', async (data: any) => {
       feedHandler.handlePostComment(data);
     });
 
-    await subscribeToEvent('user.followed', (data) => {
+    subscribeToEvent('user.followed', async (data: any) => {
       notificationHandler.handleFollowNotification(data);
     });
 

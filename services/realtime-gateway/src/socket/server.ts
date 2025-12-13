@@ -20,7 +20,7 @@ import { PresenceManager } from '../services/presence.service';
 import { RoomManager } from '../services/room.service';
 import { registerSocketHandlers } from './handlers';
 
-const logger = createLogger('socket-server');
+const logger = createLogger({ service: 'socket-server' });
 
 let io: Server | null = null;
 

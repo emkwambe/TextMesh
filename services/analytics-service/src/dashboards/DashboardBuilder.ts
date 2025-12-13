@@ -317,11 +317,11 @@ export class DashboardBuilder {
       return null;
     }
 
-    const updated: Dashboard = {
+    const updated = {
       ...existing,
       ...updates,
       updatedAt: new Date(),
-    };
+    } as Dashboard;
 
     if (updates.widgets) {
       updated.widgets = await this.buildWidgets(updates.widgets);

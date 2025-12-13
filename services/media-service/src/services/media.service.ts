@@ -9,7 +9,7 @@
  */
 
 import { prisma, redis } from '@textmesh/db-client';
-import { publishEvent } from '@textmesh/event-bus';
+import { publishEvent, EventType } from '@textmesh/event-bus';
 import { createLogger } from '@textmesh/logger';
 import { s3Provider } from '../storage/s3.provider';
 import { imageProcessor, IMAGE_SIZES } from '../processors/image.processor';
@@ -17,7 +17,7 @@ import { videoProcessor, VIDEO_PROFILES } from '../processors/video.processor';
 import { v4 as uuid } from 'uuid';
 import { promises as fs } from 'fs';
 
-const logger = createLogger('media-service');
+const logger = createLogger({ service: 'media-service' });
 
 export interface UploadInput {
   userId: string;
@@ -192,7 +192,7 @@ export class MediaService {
       });
 
       // Publish event
-      await publishEvent('media.uploaded', {
+      await publishEvent(EventType.MEDIA_UPLOADED, {
         mediaId,
         userId,
         type,
@@ -313,7 +313,7 @@ export class MediaService {
       await videoProcessor.cleanup(thumbnailPaths);
 
       // Publish event
-      await publishEvent('media.uploaded', {
+      await publishEvent(EventType.MEDIA_UPLOADED, {
         mediaId,
         userId,
         type: 'video',
@@ -537,7 +537,7 @@ export class MediaService {
     await redis.del(`media:${mediaId}`);
 
     // Publish event
-    await publishEvent('media.deleted', { mediaId, userId });
+    await publishEvent(EventType.MEDIA_DELETED, { mediaId, userId });
 
     logger.info('Media deleted', { mediaId, userId });
   }

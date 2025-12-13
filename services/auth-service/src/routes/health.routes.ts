@@ -2,10 +2,10 @@
 // HEALTH CHECK ROUTES
 // =================================
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, IRouter } from 'express';
 import { checkDatabaseHealth } from '@textmesh/db-client';
 
-export const healthRoutes = Router();
+export const healthRoutes: IRouter = Router();
 
 healthRoutes.get('/', (_req: Request, res: Response) => {
   res.json({ status: 'healthy', service: 'auth-service' });

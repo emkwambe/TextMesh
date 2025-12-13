@@ -9,7 +9,7 @@
  * - Content moderation hooks
  */
 
-import express from 'express';
+import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -22,10 +22,10 @@ import mediaRoutes from './routes/media.routes';
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
 
-const logger = createLogger('media-service');
+const logger = createLogger({ service: 'media-service' });
 const PORT = process.env.PORT || 3014;
 
-const app = express();
+const app: Application = express();
 
 // Middleware
 app.use(helmet());

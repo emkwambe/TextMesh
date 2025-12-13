@@ -49,6 +49,7 @@ export enum EventType {
   MEDIA_UPLOADED = 'media.uploaded',
   MEDIA_PROCESSED = 'media.processed',
   MEDIA_FAILED = 'media.failed',
+  MEDIA_DELETED = 'media.deleted',
 
   // Compliance Events
   DATA_EXPORT_REQUESTED = 'compliance.export.requested',
@@ -65,11 +66,16 @@ export enum EventType {
   MESSAGE_EDITED = 'message.edited',
   MESSAGE_DELETED = 'message.deleted',
   MESSAGES_READ = 'message.read',
+  MESSAGE_READ = 'message.read',
   READ_RECEIPT = 'message.read_receipt',
   MESSAGE_REACTION_ADDED = 'message.reaction_added',
   MESSAGE_REACTION_REMOVED = 'message.reaction_removed',
   CONVERSATION_CREATED = 'conversation.created',
   CONVERSATION_LEFT = 'conversation.left',
+
+  // Notification Events (additional)
+  NOTIFICATION_READ = 'notification.read',
+  NOTIFICATION_READ_ALL = 'notification.read-all',
 }
 
 export interface BaseEvent<T extends EventType, P> {

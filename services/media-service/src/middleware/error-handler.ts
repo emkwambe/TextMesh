@@ -5,7 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('media-error-handler');
+const logger = createLogger({ service: 'media-error-handler' });
 
 export interface AppError extends Error {
   statusCode?: number;

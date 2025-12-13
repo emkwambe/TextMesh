@@ -85,7 +85,7 @@ export class OAuthService {
     try {
       // Fetch Apple's public keys
       const response = await fetch('https://appleid.apple.com/auth/keys');
-      const { keys } = await response.json();
+      const { keys } = await response.json() as { keys: any[] };
 
       // Decode token header to get the key ID
       const tokenHeader = JSON.parse(
