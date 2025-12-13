@@ -94,8 +94,8 @@ export function getReplicaClient(): PrismaClient {
     return getPrimaryClient();
   }
 
-  // Round-robin selection
-  const client = replicaClients[currentReplicaIndex];
+  // Round-robin selection - client guaranteed to exist when length > 0
+  const client = replicaClients[currentReplicaIndex]!;
   currentReplicaIndex = (currentReplicaIndex + 1) % replicaClients.length;
 
   return client;
@@ -112,7 +112,7 @@ export function getRandomReplicaClient(): PrismaClient {
   }
 
   const index = Math.floor(Math.random() * replicaClients.length);
-  return replicaClients[index];
+  return replicaClients[index]!;
 }
 
 /**
@@ -181,8 +181,9 @@ export async function checkDatabaseHealth(): Promise<{
   // Check replicas
   initializeReplicas();
   for (let i = 0; i < replicaClients.length; i++) {
+    const replicaClient = replicaClients[i]!;
     try {
-      await replicaClients[i].$queryRaw`SELECT 1`;
+      await replicaClient.$queryRaw`SELECT 1`;
       results.replicas.push(true);
     } catch (error) {
       logger.error(`Replica ${i} health check failed`, { error });

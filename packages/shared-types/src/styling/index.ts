@@ -175,6 +175,12 @@ export interface StyledPostContent {
   defaultTextColor: TextColor;
   defaultFontWeight: FontWeight;
   defaultFontSize: FontSize;
+  padding?: {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
+  };
   stickers: Sticker[];
   overlays: ShapeOverlay[];
   templateId?: string;

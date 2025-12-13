@@ -330,6 +330,9 @@ importers:
       '@prisma/client':
         specifier: ^5.7.0
         version: 5.22.0(prisma@5.22.0)
+      '@textmesh/logger':
+        specifier: workspace:*
+        version: link:../logger
       ioredis:
         specifier: ^5.3.2
         version: 5.8.2

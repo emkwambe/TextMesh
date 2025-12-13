@@ -6,28 +6,28 @@ import { PrismaClient } from '@prisma/client';
 import Redis from 'ioredis';
 
 // Prisma Client Singleton
-let prisma: PrismaClient | null = null;
+let _prismaInstance: PrismaClient | null = null;
 
 export function getPrismaClient(): PrismaClient {
-  if (!prisma) {
-    prisma = new PrismaClient({
+  if (!_prismaInstance) {
+    _prismaInstance = new PrismaClient({
       log: process.env['NODE_ENV'] === 'development'
         ? ['query', 'info', 'warn', 'error']
         : ['error'],
     });
   }
-  return prisma;
+  return _prismaInstance;
 }
 
 export async function disconnectPrisma(): Promise<void> {
-  if (prisma) {
-    await prisma.$disconnect();
-    prisma = null;
+  if (_prismaInstance) {
+    await _prismaInstance.$disconnect();
+    _prismaInstance = null;
   }
 }
 
 // Redis Client
-let redis: Redis | null = null;
+let _redisInstance: Redis | null = null;
 
 export interface RedisConfig {
   url?: string;
@@ -39,11 +39,11 @@ export interface RedisConfig {
 }
 
 export function getRedisClient(config?: RedisConfig): Redis {
-  if (!redis) {
+  if (!_redisInstance) {
     const redisUrl = config?.url || process.env['REDIS_URL'] || 'redis://localhost:6379';
     const password = config?.password || process.env['REDIS_PASSWORD'];
 
-    redis = new Redis(redisUrl, {
+    _redisInstance = new Redis(redisUrl, {
       ...(password && { password }),
       db: config?.db || 0,
       maxRetriesPerRequest: 3,
@@ -56,21 +56,21 @@ export function getRedisClient(config?: RedisConfig): Redis {
       lazyConnect: true,
     });
 
-    redis.on('error', (err) => {
+    _redisInstance.on('error', (err) => {
       console.error('Redis connection error:', err);
     });
 
-    redis.on('connect', () => {
+    _redisInstance.on('connect', () => {
       console.log('Connected to Redis');
     });
   }
-  return redis;
+  return _redisInstance;
 }
 
 export async function disconnectRedis(): Promise<void> {
-  if (redis) {
-    await redis.quit();
-    redis = null;
+  if (_redisInstance) {
+    await _redisInstance.quit();
+    _redisInstance = null;
   }
 }
 
@@ -328,8 +328,12 @@ export * from './replica';
 export * from './connection-pool';
 
 // Convenience exports for services
-export const prisma = getPrismaClient();
-export const redis = getRedisClient();
+export const prismaClient = getPrismaClient();
+export const redisClient = getRedisClient();
+
+// Backward compatible aliases
+export const prisma = prismaClient;
+export const redis = redisClient;
 
 export default {
   getPrismaClient,

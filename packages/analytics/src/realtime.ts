@@ -17,7 +17,7 @@ interface ActiveSession {
   events: number;
 }
 
-interface RealtimeMetrics {
+export interface RealtimeMetrics {
   activeUsers: number;
   activeSessions: number;
   eventsPerMinute: number;

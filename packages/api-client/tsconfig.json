@@ -5,7 +5,9 @@
     "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
-    "moduleResolution": "bundler"
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "incremental": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

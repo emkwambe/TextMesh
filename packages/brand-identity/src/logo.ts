@@ -74,7 +74,7 @@ export const LOGO_COLORS: Record<LogoColor, { primary: string; secondary: string
  * Generate the TextMesh icon SVG
  * The icon is a stylized "T" with mesh/grid pattern
  */
-export function generateIconSVG(config: LogoConfig): string {
+export function generateLogoIconSVG(config: LogoConfig): string {
   const size = LOGO_SIZES[config.size];
   const colors = LOGO_COLORS[config.color];
 
@@ -228,7 +228,7 @@ export function generateCompactLogoSVG(config: LogoConfig): string {
 export function generateLogo(config: LogoConfig): string {
   switch (config.variant) {
     case 'icon':
-      return generateIconSVG(config);
+      return generateLogoIconSVG(config);
     case 'wordmark':
       return generateWordmarkSVG(config);
     case 'full':

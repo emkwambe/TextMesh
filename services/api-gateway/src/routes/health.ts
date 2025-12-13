@@ -2,11 +2,11 @@
 // HEALTH CHECK ROUTES
 // =================================
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, IRouter } from 'express';
 import { checkDatabaseHealth } from '@textmesh/db-client';
 import { HealthCheckResponse } from '@textmesh/shared-types';
 
-export const healthRoutes = Router();
+export const healthRoutes: IRouter = Router();
 
 const startTime = Date.now();
 

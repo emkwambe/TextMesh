@@ -343,4 +343,22 @@ export function createEventMetadata(
 // Re-export types
 export { EventType, EVENT_TOPICS, TextMeshEvent } from '@textmesh/shared-types';
 
+// Alias for backward compatibility
+export { EventType as EventTypes } from '@textmesh/shared-types';
+
+// Convenience standalone publish function
+let defaultEventBus: EventBus | null = null;
+
+export function initializeEventBus(config: EventBusConfig, serviceName: string): EventBus {
+  defaultEventBus = new EventBus(config, serviceName);
+  return defaultEventBus;
+}
+
+export async function publishEvent<T>(eventType: EventType, payload: T, options?: { correlationId?: string; userId?: string }): Promise<void> {
+  if (!defaultEventBus) {
+    throw new Error('EventBus not initialized. Call initializeEventBus first.');
+  }
+  await defaultEventBus.publish(eventType, payload, options);
+}
+
 export default EventBus;

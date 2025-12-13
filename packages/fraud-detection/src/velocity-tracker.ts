@@ -260,7 +260,7 @@ export class VelocityTracker {
       const scopeId = this.getScopeId(rule.scope, identifiers);
       if (!scopeId) continue;
 
-      const key = `${action}:${rule.scope}:${scopeId}`;
+      const key = `${rule.action}:${rule.scope}:${scopeId}`;
       const entry = this.windows.get(key);
 
       if (entry && now - entry.windowStart < rule.windowMs) {

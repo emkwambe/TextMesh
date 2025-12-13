@@ -240,7 +240,7 @@ export class CDNProvider {
       }
     );
 
-    const result = await response.json();
+    const result = await response.json() as { success: boolean; errors?: Array<{ message: string }> };
 
     if (result.success) {
       logger.info('Cloudflare cache purged', { options });

@@ -77,7 +77,7 @@ export const lightTheme: Theme = {
 export const darkTheme: Theme = {
   name: 'TextMesh Dark',
   mode: 'dark',
-  colors: DARK_SEMANTIC_COLORS,
+  colors: DARK_SEMANTIC_COLORS as unknown as typeof SEMANTIC_COLORS,
   brandColors: BRAND_COLORS,
   typography: {
     fonts: FONT_FAMILIES,
@@ -96,17 +96,17 @@ export const darkTheme: Theme = {
     primary: '0 10px 20px -3px rgba(0, 102, 255, 0.4)',
     secondary: '0 10px 20px -3px rgba(135, 25, 255, 0.4)',
     accent: '0 10px 20px -3px rgba(0, 212, 237, 0.4)',
-  },
+  } as unknown as typeof SHADOWS,
   transitions: TRANSITIONS,
   zIndex: Z_INDEX,
   breakpoints: BREAKPOINTS,
   components: {
     button: {
-      variants: { ...BUTTON_VARIANTS, ...DARK_BUTTON_VARIANTS } as typeof BUTTON_VARIANTS,
+      variants: { ...BUTTON_VARIANTS, ...DARK_BUTTON_VARIANTS } as unknown as typeof BUTTON_VARIANTS,
       sizes: BUTTON_SIZES,
     },
-    input: { ...INPUT_STYLES, default: { ...INPUT_STYLES.default, ...DARK_INPUT_STYLES } },
-    card: { ...CARD_STYLES, ...DARK_CARD_STYLES } as typeof CARD_STYLES,
+    input: { ...INPUT_STYLES, default: { ...INPUT_STYLES.default, ...DARK_INPUT_STYLES } } as unknown as typeof INPUT_STYLES,
+    card: { ...CARD_STYLES, ...DARK_CARD_STYLES } as unknown as typeof CARD_STYLES,
   },
 };
 

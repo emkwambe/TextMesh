@@ -52,7 +52,7 @@ export class ConnectionPool {
   private client: PrismaClient;
   private config: PoolConfig;
   private metrics: PoolMetrics;
-  private healthCheckInterval?: NodeJS.Timer;
+  private healthCheckInterval?: NodeJS.Timeout;
 
   constructor(databaseUrl: string, config: Partial<PoolConfig> = {}) {
     this.config = { ...defaultConfig, ...config };
