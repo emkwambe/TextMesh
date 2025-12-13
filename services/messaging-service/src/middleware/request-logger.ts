@@ -5,7 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('messaging-service');
+const logger = createLogger({ service: 'messaging-service' });
 
 export function requestLogger(req: Request, res: Response, next: NextFunction) {
   const start = Date.now();

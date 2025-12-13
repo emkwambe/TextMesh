@@ -367,7 +367,7 @@ export class OnboardingManager {
       case 'profile_photo':
       case 'display_name':
       case 'bio':
-        return this.profileWizard.getSuggestions(userId);
+        return this.profileWizard.getSuggestions(userId) as unknown as Record<string, unknown>;
 
       case 'interests':
         const interests = await this.interestSelector.getAvailableInterests();

@@ -81,6 +81,7 @@ const INTEREST_CATEGORIES = [
   'lifestyle',
   'beauty',
   'automotive',
+  'entertainment',
 ] as const;
 
 type InterestCategory = typeof INTEREST_CATEGORIES[number];

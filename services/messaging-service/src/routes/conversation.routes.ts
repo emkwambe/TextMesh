@@ -2,13 +2,13 @@
  * Conversation Routes
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
 import { conversationService } from '../services/conversation.service';
 import { createLogger } from '@textmesh/logger';
 
-const router = Router();
-const logger = createLogger('conversation-routes');
+const router: IRouter = Router();
+const logger = createLogger({ service: 'conversation-routes' });
 
 // Validation middleware
 const validate = (req: Request, res: Response, next: NextFunction) => {

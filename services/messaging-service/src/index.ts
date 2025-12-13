@@ -9,7 +9,7 @@
  * - Media attachments in DMs
  */
 
-import express from 'express';
+import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -22,10 +22,10 @@ import messageRoutes from './routes/message.routes';
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
 
-const logger = createLogger('messaging-service');
+const logger = createLogger({ service: 'messaging-service' });
 const PORT = process.env.PORT || 3013;
 
-const app = express();
+const app: Application = express();
 
 // Middleware
 app.use(helmet());

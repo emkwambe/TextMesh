@@ -611,6 +611,49 @@ export class RiskScorer {
   }
 
   /**
+   * Get user risk profile (alias for calculateRiskScore)
+   */
+  async getUserRiskProfile(userId: string): Promise<RiskScore> {
+    return this.calculateRiskScore(userId);
+  }
+
+  /**
+   * Get user risk score (quick check)
+   */
+  async getUserRiskScore(userId: string): Promise<number> {
+    const check = await this.quickRiskCheck(userId);
+    return check.score;
+  }
+
+  /**
+   * Update risk factor (alias for addRiskFactor)
+   */
+  async updateRiskFactor(userId: string, factor: string, value: number): Promise<void> {
+    await this.addRiskFactor(userId, {
+      category: 'behavior',
+      name: factor,
+      impact: value,
+      description: `Updated factor: ${factor}`,
+    });
+  }
+
+  /**
+   * Increment violation count
+   */
+  async incrementViolation(userId: string, violationType: string): Promise<void> {
+    const key = `user:violations:${userId}`;
+    await this.redis.incr(key);
+    await this.redis.expire(key, 30 * 24 * 60 * 60); // 30 days
+
+    await this.addRiskFactor(userId, {
+      category: 'reputation',
+      name: 'violation',
+      impact: 10,
+      description: `Violation: ${violationType}`,
+    });
+  }
+
+  /**
    * Quick risk check (cached)
    */
   async quickRiskCheck(userId: string): Promise<{ level: RiskLevel; score: number }> {

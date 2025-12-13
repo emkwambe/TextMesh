@@ -159,7 +159,7 @@ export class RetentionHooks {
     // Check for achievements
     const achievementType = this.mapActivityToAchievementType(activityType);
     if (achievementType) {
-      await this.achievementSystem.checkAchievements(userId, achievementType);
+      await this.achievementSystem.checkAchievements(userId, achievementType as any);
     }
 
     // Check for resurrection

@@ -91,7 +91,7 @@ export function userRoutes(
     validateRequest(paginationSchema),
     asyncHandler(async (req: Request, res: Response) => {
       const { id } = req.params;
-      const { cursor, limit } = req.query as { cursor?: string; limit: number };
+      const { cursor, limit = 20 } = req.query as unknown as { cursor?: string; limit: number };
       const posts = await userService.getUserPosts(id, req.userId, cursor, limit);
       res.json({ success: true, data: posts });
     })
@@ -103,7 +103,7 @@ export function userRoutes(
     validateRequest(paginationSchema),
     asyncHandler(async (req: Request, res: Response) => {
       const { id } = req.params;
-      const { cursor, limit } = req.query as { cursor?: string; limit: number };
+      const { cursor, limit = 20 } = req.query as unknown as { cursor?: string; limit: number };
       const followers = await userService.getFollowers(id, cursor, limit);
       res.json({ success: true, data: followers });
     })
@@ -115,7 +115,7 @@ export function userRoutes(
     validateRequest(paginationSchema),
     asyncHandler(async (req: Request, res: Response) => {
       const { id } = req.params;
-      const { cursor, limit } = req.query as { cursor?: string; limit: number };
+      const { cursor, limit = 20 } = req.query as unknown as { cursor?: string; limit: number };
       const following = await userService.getFollowing(id, cursor, limit);
       res.json({ success: true, data: following });
     })

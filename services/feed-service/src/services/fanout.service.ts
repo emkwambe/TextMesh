@@ -9,10 +9,9 @@
  */
 
 import { redis, prisma } from '@textmesh/db-client';
-import { publishEvent, subscribeToEvent } from '@textmesh/event-bus';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('fanout-service');
+const logger = createLogger({ service: 'fanout-service' });
 
 // Configuration
 const FEED_MAX_SIZE = 1000; // Max posts in a user's feed
@@ -469,10 +468,16 @@ export class FanoutService {
 export const fanoutService = new FanoutService();
 
 /**
- * Initialize fanout event handlers
+ * Initialize fanout event handlers with event bus
  */
-export async function initializeFanoutHandlers(): Promise<void> {
-  await subscribeToEvent('post.created', async (data) => {
+export async function initializeFanoutHandlers(eventBus?: { on: (eventType: string, handler: (data: any) => Promise<void>) => void }): Promise<void> {
+  if (!eventBus) {
+    logger.info('No event bus provided, fanout handlers not initialized');
+    return;
+  }
+
+  eventBus.on('post.created', async (event: any) => {
+    const data = event.payload || event;
     const post: PostData = {
       id: data.postId,
       authorId: data.authorId,
@@ -487,7 +492,8 @@ export async function initializeFanoutHandlers(): Promise<void> {
     await fanoutService.fanoutPost(post);
   });
 
-  await subscribeToEvent('post.deleted', async (data) => {
+  eventBus.on('post.deleted', async (event: any) => {
+    const data = event.payload || event;
     const post: PostData = {
       id: data.postId,
       authorId: data.authorId,
@@ -499,7 +505,8 @@ export async function initializeFanoutHandlers(): Promise<void> {
     await fanoutService.removeFanout(post);
   });
 
-  await subscribeToEvent('user.followed', async (data) => {
+  eventBus.on('user.followed', async (event: any) => {
+    const data = event.payload || event;
     // When user follows someone, rebuild their feed to include new content
     await fanoutService.rebuildFeed(data.followerId);
   });

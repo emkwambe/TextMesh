@@ -91,7 +91,7 @@ export class ElasticsearchClient {
               },
             },
           },
-          mappings: mapping,
+          mappings: mapping as any,
         },
       });
 

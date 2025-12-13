@@ -125,7 +125,7 @@ export function postRoutes(
     '/:id/likes',
     validateRequest(paginationSchema),
     asyncHandler(async (req: Request, res: Response) => {
-      const { cursor, limit } = req.query as { cursor?: string; limit: number };
+      const { cursor, limit = 20 } = req.query as unknown as { cursor?: string; limit: number };
       const likes = await postService.getPostLikes(req.params['id']!, cursor, limit);
       res.json({ success: true, data: likes });
     })
@@ -166,7 +166,7 @@ export function postRoutes(
         res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } });
         return;
       }
-      const { cursor, limit } = req.query as { cursor?: string; limit: number };
+      const { cursor, limit = 20 } = req.query as unknown as { cursor?: string; limit: number };
       const bookmarks = await postService.getUserBookmarks(req.userId, cursor, limit);
       res.json({ success: true, data: bookmarks });
     })
@@ -177,7 +177,7 @@ export function postRoutes(
     '/:id/replies',
     validateRequest(paginationSchema),
     asyncHandler(async (req: Request, res: Response) => {
-      const { cursor, limit } = req.query as { cursor?: string; limit: number };
+      const { cursor, limit = 20 } = req.query as unknown as { cursor?: string; limit: number };
       const replies = await postService.getPostReplies(req.params['id']!, req.userId, cursor, limit);
       res.json({ success: true, data: replies });
     })
@@ -188,7 +188,7 @@ export function postRoutes(
     '/hashtag/:tag',
     validateRequest(paginationSchema),
     asyncHandler(async (req: Request, res: Response) => {
-      const { cursor, limit } = req.query as { cursor?: string; limit: number };
+      const { cursor, limit = 20 } = req.query as unknown as { cursor?: string; limit: number };
       const posts = await postService.getPostsByHashtag(req.params['tag']!, req.userId, cursor, limit);
       res.json({ success: true, data: posts });
     })

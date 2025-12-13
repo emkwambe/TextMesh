@@ -2,13 +2,13 @@
  * Message Routes
  */
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
 import { messageService } from '../services/message.service';
 import { createLogger } from '@textmesh/logger';
 
-const router = Router();
-const logger = createLogger('message-routes');
+const router: IRouter = Router();
+const logger = createLogger({ service: 'message-routes' });
 
 // Validation middleware
 const validate = (req: Request, res: Response, next: NextFunction) => {

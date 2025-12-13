@@ -192,11 +192,10 @@ export class ContentModerator {
     });
 
     // Track for behavior analysis
-    await this.behaviorAnalyzer.trackContentSubmission(userId, {
-      contentType,
+    await this.behaviorAnalyzer.trackContentSubmission(userId, contentType, content, {
       scores,
       flags: flags.length,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     });
 
     return {

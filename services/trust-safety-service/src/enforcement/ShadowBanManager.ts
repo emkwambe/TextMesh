@@ -119,9 +119,51 @@ export class ShadowBanManager {
   }
 
   /**
-   * Apply shadow ban to user
+   * Get shadow ban status (alias)
+   */
+  async getStatus(userId: string): Promise<ShadowBanStatus> {
+    return this.getShadowBanStatus(userId);
+  }
+
+  /**
+   * Apply shadow ban to user (object signature for compatibility)
    */
   async applyShadowBan(
+    userIdOrParams: string | {
+      userId: string;
+      moderatorId?: string;
+      reason: string;
+      level?: string;
+      duration?: number;
+    },
+    type?: ShadowBanType,
+    reason?: string,
+    options?: {
+      duration?: number; // hours
+      severity?: number;
+      scope?: ShadowBanScope;
+      createdBy?: string;
+      metadata?: Record<string, unknown>;
+    }
+  ): Promise<ShadowBan> {
+    // Handle object signature
+    if (typeof userIdOrParams === 'object') {
+      const params = userIdOrParams;
+      const banType = (params.level as ShadowBanType) || 'reach';
+      return this._applyShadowBan(params.userId, banType, params.reason, {
+        duration: params.duration,
+        createdBy: params.moderatorId,
+      });
+    }
+
+    // Handle positional params
+    return this._applyShadowBan(userIdOrParams, type!, reason!, options);
+  }
+
+  /**
+   * Internal apply shadow ban implementation
+   */
+  private async _applyShadowBan(
     userId: string,
     type: ShadowBanType,
     reason: string,
@@ -158,15 +200,48 @@ export class ShadowBanManager {
     await this.recordShadowBan(shadowBan);
 
     // Log the action
-    await this.logBanAction('apply', shadowBan);
+    await this.logBanAction('apply', { ...shadowBan } as unknown as Record<string, unknown>);
 
     return shadowBan;
   }
 
   /**
-   * Remove shadow ban
+   * Remove shadow ban (supports multiple signatures)
    */
   async removeShadowBan(
+    userId: string,
+    typeOrModeratorId?: ShadowBanType | string,
+    removedByOrReason?: string,
+    reason?: string
+  ): Promise<boolean> {
+    // If only userId is provided, remove all bans
+    if (!typeOrModeratorId) {
+      const activeBans = await this.redis.smembers(`shadowban:active:${userId}`);
+      for (const banType of activeBans) {
+        await this.redis.del(`shadowban:${userId}:${banType}`);
+      }
+      await this.redis.del(`shadowban:active:${userId}`);
+      return true;
+    }
+
+    // Check if second arg is a ban type or moderator ID
+    const isBanType = ['visibility', 'engagement', 'reach', 'notification', 'search', 'recommendation', 'full'].includes(typeOrModeratorId);
+
+    if (isBanType) {
+      // Original signature: (userId, type, removedBy, reason?)
+      return this._removeShadowBan(userId, typeOrModeratorId as ShadowBanType, removedByOrReason!, reason);
+    } else {
+      // New signature: (userId, moderatorId, reason)
+      // Remove all active bans
+      const activeBans = await this.redis.smembers(`shadowban:active:${userId}`);
+      for (const banType of activeBans) {
+        await this._removeShadowBan(userId, banType as ShadowBanType, typeOrModeratorId, removedByOrReason);
+      }
+      return activeBans.length > 0;
+    }
+  }
+
+  private async _removeShadowBan(
     userId: string,
     type: ShadowBanType,
     removedBy: string,

@@ -5,11 +5,11 @@
  */
 
 import { prisma, redis } from '@textmesh/db-client';
-import { publishEvent, EventTypes } from '@textmesh/event-bus';
+import { publishEvent, EventType } from '@textmesh/event-bus';
 import { createLogger } from '@textmesh/logger';
 import { v4 as uuidv4 } from 'uuid';
 
-const logger = createLogger('message-service');
+const logger = createLogger({ service: 'message-service' });
 
 // Constants
 const MESSAGE_MAX_LENGTH = 5000;
@@ -148,7 +148,7 @@ export class MessageService {
     });
 
     // Publish message event
-    await publishEvent(EventTypes.MESSAGE_SENT, {
+    await publishEvent(EventType.MESSAGE_SENT, {
       messageId: message.id,
       conversationId,
       senderId,
@@ -330,7 +330,7 @@ export class MessageService {
     });
 
     // Publish event
-    await publishEvent(EventTypes.MESSAGE_EDITED, {
+    await publishEvent(EventType.MESSAGE_EDITED, {
       messageId,
       conversationId: message.conversationId,
       senderId: userId,
@@ -365,7 +365,7 @@ export class MessageService {
     });
 
     // Publish event
-    await publishEvent(EventTypes.MESSAGE_DELETED, {
+    await publishEvent(EventType.MESSAGE_DELETED, {
       messageId,
       conversationId: message.conversationId,
       senderId: userId,
@@ -419,7 +419,7 @@ export class MessageService {
     });
 
     // Publish read event
-    await publishEvent(EventTypes.MESSAGES_READ, {
+    await publishEvent(EventType.MESSAGES_READ, {
       conversationId,
       userId,
       messageIds: unreadMessages.map((m) => m.id),
@@ -431,7 +431,7 @@ export class MessageService {
     // Notify senders about read receipt
     const senderIds = [...new Set(unreadMessages.map((m) => m.senderId))];
     for (const senderId of senderIds) {
-      await publishEvent(EventTypes.READ_RECEIPT, {
+      await publishEvent(EventType.READ_RECEIPT, {
         conversationId,
         readerId: userId,
         senderId,
@@ -485,7 +485,7 @@ export class MessageService {
     });
 
     // Publish event
-    await publishEvent(EventTypes.MESSAGE_REACTION_ADDED, {
+    await publishEvent(EventType.MESSAGE_REACTION_ADDED, {
       messageId,
       conversationId: message.conversationId,
       userId,
@@ -511,7 +511,7 @@ export class MessageService {
     });
 
     if (message) {
-      await publishEvent(EventTypes.MESSAGE_REACTION_REMOVED, {
+      await publishEvent(EventType.MESSAGE_REACTION_REMOVED, {
         messageId,
         conversationId: message.conversationId,
         userId,

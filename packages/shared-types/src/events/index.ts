@@ -59,6 +59,17 @@ export enum EventType {
   // Analytics Events
   ANALYTICS_PAGE_VIEW = 'analytics.page_view',
   ANALYTICS_ACTION = 'analytics.action',
+
+  // Messaging Events
+  MESSAGE_SENT = 'message.sent',
+  MESSAGE_EDITED = 'message.edited',
+  MESSAGE_DELETED = 'message.deleted',
+  MESSAGES_READ = 'message.read',
+  READ_RECEIPT = 'message.read_receipt',
+  MESSAGE_REACTION_ADDED = 'message.reaction_added',
+  MESSAGE_REACTION_REMOVED = 'message.reaction_removed',
+  CONVERSATION_CREATED = 'conversation.created',
+  CONVERSATION_LEFT = 'conversation.left',
 }
 
 export interface BaseEvent<T extends EventType, P> {

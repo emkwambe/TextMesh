@@ -688,6 +688,50 @@ export class BehaviorAnalyzer {
   async flagForCoordination(userId: string): Promise<void> {
     await this.redis.sadd('coordinated:users', userId);
   }
+
+  /**
+   * Track content submission for analysis
+   */
+  async trackContentSubmission(
+    userId: string,
+    contentType: string,
+    content: string,
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    const now = Date.now();
+
+    // Record the submission
+    await this.recordAction(userId, 'content_submission', {
+      contentType,
+      contentLength: content.length,
+      ...metadata,
+    });
+
+    // Store content hash for duplicate detection
+    const contentHash = this.simpleHash(content);
+    const contentKey = `user:content:${userId}`;
+    await this.redis.lpush(contentKey, contentHash);
+    await this.redis.ltrim(contentKey, 0, 99);
+    await this.redis.expire(contentKey, 86400);
+
+    // Track post count
+    const postsKey = `user:posts:${userId}`;
+    await this.redis.zadd(postsKey, now, `${now}`);
+    await this.redis.expire(postsKey, 86400);
+  }
+
+  /**
+   * Simple hash function for content deduplication
+   */
+  private simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return hash.toString(36);
+  }
 }
 
 export default BehaviorAnalyzer;

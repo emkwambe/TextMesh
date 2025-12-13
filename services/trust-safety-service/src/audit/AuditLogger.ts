@@ -110,10 +110,55 @@ export class AuditLogger {
   private readonly BUFFER_SIZE = 100;
   private readonly FLUSH_INTERVAL_MS = 5000;
 
-  constructor(redis: Redis, prisma: PrismaClient) {
-    this.redis = redis;
-    this.prisma = prisma;
-    this.startFlushInterval();
+  constructor(prismaOrRedis: PrismaClient | Redis, prisma?: PrismaClient) {
+    // Support both (prisma) and (redis, prisma) constructor signatures
+    if (prisma) {
+      this.redis = prismaOrRedis as Redis;
+      this.prisma = prisma;
+    } else {
+      // Prisma-only constructor - use a mock Redis
+      this.prisma = prismaOrRedis as PrismaClient;
+      this.redis = null as any;
+    }
+    if (this.redis) {
+      this.startFlushInterval();
+    }
+  }
+
+  /**
+   * Convenience method - log an action (wrapper for log)
+   */
+  async logAction(params: {
+    action: string;
+    actorId: string;
+    targetId?: string;
+    targetType?: string;
+    details?: Record<string, unknown>;
+  }): Promise<string> {
+    return this.log({
+      category: 'moderation',
+      action: params.action,
+      actorId: params.actorId,
+      actorType: 'moderator',
+      targetId: params.targetId,
+      targetType: params.targetType,
+      details: params.details || {},
+      outcome: 'success',
+    });
+  }
+
+  /**
+   * Convenience method - get logs (wrapper for query)
+   */
+  async getLogs(params: {
+    actorId?: string;
+    targetId?: string;
+    action?: string;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }): Promise<AuditEntry[]> {
+    return this.query(params);
   }
 
   /**

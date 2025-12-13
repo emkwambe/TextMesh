@@ -11,7 +11,7 @@
 import { redis, prisma } from '@textmesh/db-client';
 import { createLogger } from '@textmesh/logger';
 
-const logger = createLogger('precompute-service');
+const logger = createLogger({ service: 'precompute-service' });
 
 // Feed types
 type FeedType = 'home' | 'trending' | 'following' | 'for_you';
@@ -128,7 +128,7 @@ export class PrecomputeService {
       where: { followerId: userId },
       select: { followingId: true },
     });
-    const followingIds = new Set(following.map((f) => f.followingId));
+    const followingIds: Set<string> = new Set(following.map((f) => f.followingId as string));
 
     // Get recent posts from various sources
     const candidatePosts = await this.getCandidatePosts(userId, followingIds);
@@ -270,7 +270,7 @@ export class PrecomputeService {
       take: 100,
     });
 
-    const likedAuthors = new Set(likes.map((l) => l.post.authorId));
+    const likedAuthors: Set<string> = new Set(likes.map((l) => l.post.authorId as string));
 
     // Get topics from user's posts and likes (would need hashtag extraction)
     const engagedTopics: string[] = [];

@@ -3,11 +3,11 @@
 // Onboarding, Engagement & Growth
 // =================================
 
-import express, { Request, Response } from 'express';
+import express, { Request, Response, Application } from 'express';
 import { createLogger } from '@textmesh/logger';
 import { getRedisClient, getPrismaClient } from '@textmesh/db-client';
 
-const app = express();
+const app: Application = express();
 const logger = createLogger({ service: 'growth-service' });
 const PORT = process.env['PORT'] || 3011;
 

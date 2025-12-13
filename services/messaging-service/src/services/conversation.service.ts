@@ -5,11 +5,11 @@
  */
 
 import { prisma, redis, CacheKeys } from '@textmesh/db-client';
-import { publishEvent, EventTypes } from '@textmesh/event-bus';
+import { publishEvent, EventType } from '@textmesh/event-bus';
 import { createLogger } from '@textmesh/logger';
 import { v4 as uuidv4 } from 'uuid';
 
-const logger = createLogger('conversation-service');
+const logger = createLogger({ service: 'conversation-service' });
 
 // Cache TTLs
 const CONVERSATION_CACHE_TTL = 300; // 5 minutes
@@ -89,7 +89,7 @@ export class ConversationService {
     });
 
     // Publish event
-    await publishEvent(EventTypes.CONVERSATION_CREATED, {
+    await publishEvent(EventType.CONVERSATION_CREATED, {
       conversationId: conversation.id,
       participantIds: [userId, otherUserId],
       type: 'direct',
@@ -151,7 +151,7 @@ export class ConversationService {
     });
 
     // Publish event
-    await publishEvent(EventTypes.CONVERSATION_CREATED, {
+    await publishEvent(EventType.CONVERSATION_CREATED, {
       conversationId: conversation.id,
       participantIds: allParticipants,
       type: 'group',
@@ -328,7 +328,7 @@ export class ConversationService {
     });
 
     // Publish event
-    await publishEvent(EventTypes.CONVERSATION_LEFT, {
+    await publishEvent(EventType.CONVERSATION_LEFT, {
       conversationId,
       userId,
     });

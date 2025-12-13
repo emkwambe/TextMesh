@@ -90,9 +90,71 @@ export class AppealManager {
   }
 
   /**
-   * Submit a new appeal
+   * Submit a new appeal (object signature for compatibility)
    */
   async submitAppeal(
+    params: {
+      userId: string;
+      actionId?: string;
+      targetId?: string;
+      type?: AppealType;
+      reason: string;
+      evidence?: string[] | string;
+    } | string,
+    type?: AppealType,
+    targetId?: string,
+    reason?: string,
+    options?: {
+      evidence?: string;
+      attachments?: string[];
+      metadata?: Record<string, unknown>;
+    }
+  ): Promise<{ success: boolean; appeal?: Appeal; error?: string }> {
+    // Handle object signature
+    if (typeof params === 'object') {
+      return this._submitAppeal(
+        params.userId,
+        params.type || 'content_removal',
+        params.actionId || params.targetId || '',
+        params.reason,
+        {
+          evidence: Array.isArray(params.evidence)
+            ? params.evidence.join('\n')
+            : params.evidence,
+        }
+      );
+    }
+
+    // Handle positional params
+    return this._submitAppeal(params, type!, targetId!, reason!, options);
+  }
+
+  /**
+   * Process appeal (alias for reviewAppeal with object signature)
+   */
+  async processAppeal(params: {
+    appealId: string;
+    moderatorId: string;
+    decision: 'approved' | 'denied' | 'partial';
+    reason: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    const decisionMap: Record<string, AppealDecision> = {
+      approved: 'overturned',
+      denied: 'upheld',
+      partial: 'modified',
+    };
+    return this.reviewAppeal(
+      params.appealId,
+      params.moderatorId,
+      decisionMap[params.decision] || 'upheld',
+      params.reason
+    );
+  }
+
+  /**
+   * Internal submit appeal implementation
+   */
+  private async _submitAppeal(
     userId: string,
     type: AppealType,
     targetId: string,

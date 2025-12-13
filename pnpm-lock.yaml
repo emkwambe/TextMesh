@@ -700,6 +700,9 @@ importers:
 
   services/analytics-service:
     dependencies:
+      '@prisma/client':
+        specifier: ^5.7.0
+        version: 5.22.0(prisma@5.22.0)
       '@textmesh/db-client':
         specifier: workspace:*
         version: link:../../packages/db-client
@@ -889,6 +892,9 @@ importers:
       express:
         specifier: ^4.18.2
         version: 4.22.1
+      ioredis:
+        specifier: ^5.3.2
+        version: 5.8.2
       uuid:
         specifier: ^9.0.0
         version: 9.0.1
@@ -948,6 +954,9 @@ importers:
 
   services/growth-service:
     dependencies:
+      '@prisma/client':
+        specifier: ^5.7.0
+        version: 5.22.0(prisma@5.22.0)
       '@textmesh/db-client':
         specifier: workspace:*
         version: link:../../packages/db-client
@@ -1073,6 +1082,9 @@ importers:
 
   services/messaging-service:
     dependencies:
+      '@prisma/client':
+        specifier: ^5.7.0
+        version: 5.22.0(prisma@5.22.0)
       '@textmesh/db-client':
         specifier: workspace:*
         version: link:../../packages/db-client
@@ -1223,6 +1235,9 @@ importers:
       express:
         specifier: ^4.18.2
         version: 4.22.1
+      ioredis:
+        specifier: ^5.3.2
+        version: 5.8.2
       uuid:
         specifier: ^9.0.0
         version: 9.0.1
@@ -1248,6 +1263,9 @@ importers:
 
   services/ranking-service:
     dependencies:
+      '@prisma/client':
+        specifier: ^5.7.0
+        version: 5.22.0(prisma@5.22.0)
       '@textmesh/db-client':
         specifier: workspace:*
         version: link:../../packages/db-client
@@ -1417,6 +1435,9 @@ importers:
 
   services/trust-safety-service:
     dependencies:
+      '@prisma/client':
+        specifier: ^5.7.0
+        version: 5.22.0(prisma@5.22.0)
       '@textmesh/db-client':
         specifier: workspace:*
         version: link:../../packages/db-client
@@ -1481,6 +1502,9 @@ importers:
       express:
         specifier: ^4.18.2
         version: 4.22.1
+      ioredis:
+        specifier: ^5.3.2
+        version: 5.8.2
       uuid:
         specifier: ^9.0.0
         version: 9.0.1

@@ -362,3 +362,32 @@ export async function publishEvent<T>(eventType: EventType, payload: T, options?
 }
 
 export default EventBus;
+
+// Legacy convenience exports for backward compatibility
+export async function connectKafka(): Promise<void> {
+  if (!defaultEventBus) {
+    console.warn('EventBus not initialized. Call initializeEventBus first.');
+    return;
+  }
+  await defaultEventBus.connectProducer();
+}
+
+export async function disconnectKafka(): Promise<void> {
+  if (defaultEventBus) {
+    await defaultEventBus.shutdown();
+  }
+}
+
+// Subscribe to event convenience function
+export function subscribeToEvent<T>(
+  eventType: EventType | string,
+  handler: (data: T) => Promise<void>
+): void {
+  if (!defaultEventBus) {
+    console.warn('EventBus not initialized. Call initializeEventBus first.');
+    return;
+  }
+  defaultEventBus.on(eventType as EventType, async (event) => {
+    await handler(event.payload as T);
+  });
+}
