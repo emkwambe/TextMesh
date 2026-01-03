@@ -16,6 +16,8 @@ const createGroupSchema = z.object({
   name: z.string().min(1).max(100),
   slug: z.string().min(3).max(100).regex(/^[a-z0-9-]+$/),
   description: z.string().max(500).optional(),
+  purpose: z.string().min(10, 'Group purpose is required (min 10 characters)'),
+  groupType: z.enum(['STUDY', 'JOURNEY', 'UPDATES', 'COMMUNITY', 'OTHER']).optional(),
   privacy: z.enum(['PUBLIC', 'PRIVATE', 'SECRET']),
   rules: z.string().max(5000).optional(),
 });
@@ -53,7 +55,17 @@ async function main() {
       if (existing) return res.status(409).json({ success: false, error: { code: ErrorCode.GROUP_SLUG_TAKEN, message: 'Slug is taken' } });
 
       const group = await prisma.group.create({
-        data: { name: data.name, slug: data.slug, description: data.description, privacy: data.privacy, rules: data.rules, ownerId: req.userId, memberCount: 1 },
+        data: {
+          name: data.name,
+          slug: data.slug,
+          description: data.description,
+          purpose: data.purpose,
+          groupType: data.groupType || 'OTHER',
+          privacy: data.privacy,
+          rules: data.rules,
+          ownerId: req.userId,
+          memberCount: 1
+        },
       });
 
       await prisma.groupMembership.create({

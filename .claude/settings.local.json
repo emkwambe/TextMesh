@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm run build)",
+      "Bash(npx prisma generate:*)",
+      "Bash(pnpm run clean:*)",
+      "Bash(Select-String -Pattern \"\\(error TS|Failed:|ERROR\\)\" -Context 0,1)",
+      "Bash(pnpm install:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm exec turbo run build:*)",
+      "Bash(pnpm run build:*)",
+      "Bash(npx tsc --showConfig)",
+      "Bash(npx tsc:*)",
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(Select-String -Pattern \"\\(error TS|Failed:|ERROR|Tasks:\\)\" -Context 0,1)"
+    ]
+  }
+}
