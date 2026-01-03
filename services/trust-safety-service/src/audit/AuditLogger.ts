@@ -1,4 +1,4 @@
-// =================================
+﻿// =================================
 // TEXTMESH AUDIT LOGGER
 // Comprehensive Audit Trail System
 // =================================
@@ -294,10 +294,10 @@ export class AuditLogger {
           ...(targetId && { targetId }),
           ...(action && { action }),
           ...(outcome && { outcome }),
-          ...(startDate && { timestamp: { gte: startDate } }),
-          ...(endDate && { timestamp: { lte: endDate } }),
+          ...(startDate && { createdAt: { gte: startDate } }),
+          ...(endDate && { createdAt: { lte: endDate } }),
         },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { createdAt: 'desc' },
         skip: offset,
         take: limit,
       });
@@ -358,7 +358,7 @@ export class AuditLogger {
    */
   async getStats(timeframe?: { start: Date; end: Date }): Promise<AuditStats> {
     const dateFilter = timeframe
-      ? { timestamp: { gte: timeframe.start, lte: timeframe.end } }
+      ? { createdAt: { gte: timeframe.start, lte: timeframe.end } }
       : {};
 
     const now = new Date();
@@ -385,7 +385,7 @@ export class AuditLogger {
           take: 10,
         }),
         this.prisma.auditLog.count({
-          where: { timestamp: { gte: dayAgo } },
+          where: { createdAt: { gte: dayAgo } },
         }),
       ]);
 
@@ -446,7 +446,7 @@ export class AuditLogger {
 
     try {
       const result = await this.prisma.auditLog.deleteMany({
-        where: { timestamp: { lt: cutoff } },
+        where: { createdAt: { lt: cutoff } },
       });
 
       return result.count;
@@ -538,20 +538,22 @@ export class AuditLogger {
       await this.prisma.auditLog.createMany({
         data: toFlush.map((entry) => ({
           id: entry.id,
-          timestamp: entry.timestamp,
+          createdAt: entry.timestamp,
           category: entry.category,
           action: entry.action,
           actorId: entry.actorId,
           actorType: entry.actorType,
           targetId: entry.targetId,
           targetType: entry.targetType,
-          details: entry.details,
+          details: entry.details as any,
           outcome: entry.outcome,
           ipAddress: entry.ipAddress,
           userAgent: entry.userAgent,
           sessionId: entry.sessionId,
           requestId: entry.requestId,
-          metadata: entry.metadata,
+          metadata: entry.metadata as any,
+          resource: 'audit',
+          userId: entry.actorId,
         })),
       });
     } catch (error) {
@@ -563,15 +565,15 @@ export class AuditLogger {
 
   private mapPrismaEntry(entry: {
     id: string;
-    timestamp: Date;
-    category: string;
+    createdAt: Date;
+    category: string | null;
     action: string;
-    actorId: string;
-    actorType: string;
+    actorId: string | null;
+    actorType: string | null;
     targetId: string | null;
     targetType: string | null;
     details: unknown;
-    outcome: string;
+    outcome: string | null;
     ipAddress: string | null;
     userAgent: string | null;
     sessionId: string | null;
@@ -580,15 +582,15 @@ export class AuditLogger {
   }): AuditEntry {
     return {
       id: entry.id,
-      timestamp: entry.timestamp,
-      category: entry.category as AuditCategory,
+      timestamp: entry.createdAt,
+      category: (entry.category as AuditCategory) || 'moderation',
       action: entry.action,
-      actorId: entry.actorId,
-      actorType: entry.actorType as ActorType,
+      actorId: entry.actorId || 'system',
+      actorType: (entry.actorType as ActorType) || 'system',
       targetId: entry.targetId || undefined,
       targetType: entry.targetType || undefined,
-      details: entry.details as Record<string, unknown>,
-      outcome: entry.outcome as AuditOutcome,
+      details: (entry.details as Record<string, unknown>) || {},
+      outcome: (entry.outcome as AuditOutcome) || 'success',
       ipAddress: entry.ipAddress || undefined,
       userAgent: entry.userAgent || undefined,
       sessionId: entry.sessionId || undefined,

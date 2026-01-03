@@ -48,7 +48,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
 
         try {
-          const response = await fetch(`${API_URL}/api/auth/login`, {
+          const response = await fetch(`${API_URL}/auth/send-otp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
@@ -79,10 +79,10 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
 
         try {
-          const response = await fetch(`${API_URL}/api/auth/register`, {
+          const response = await fetch(`${API_URL}/auth/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
+            body: JSON.stringify({ displayName: data.name, username: data.username, email: data.email, password: data.password, dateOfBirth: "1990-01-01" }),
           });
 
           if (!response.ok) {

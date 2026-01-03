@@ -1,4 +1,4 @@
-// =================================
+﻿// =================================
 // AUTH SERVICE
 // =================================
 
@@ -448,7 +448,7 @@ export class AuthService {
     return this.prisma.session.create({
       data: {
         userId,
-        deviceInfo: deviceInfo || {},
+        deviceInfo: (deviceInfo || {}) as any,
         ipAddress,
         userAgent,
         refreshToken: crypto.randomUUID(),
@@ -514,3 +514,4 @@ export class AuthService {
     return username;
   }
 }
+

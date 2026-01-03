@@ -248,9 +248,9 @@ export class RecommendationEngine {
     try {
       const following = await this.prisma.follow.findMany({
         where: { followerId: userId },
-        select: { followingId: true },
+        select: { followeeId: true },
       });
-      const ids = following.map((f) => f.followingId);
+      const ids = following.map((f) => f.followeeId);
       if (ids.length > 0) {
         await this.redis.sadd(cacheKey, ...ids);
         await this.redis.expire(cacheKey, 3600);
@@ -277,8 +277,8 @@ export class RecommendationEngine {
     // This is a simplified implementation
     const fofScores = new Map<string, number>();
 
-    for (const followingId of alreadyFollowing) {
-      const theirFollowing = await this.getFollowing(followingId);
+    for (const followeeId of alreadyFollowing) {
+      const theirFollowing = await this.getFollowing(followeeId);
       for (const fofId of theirFollowing) {
         if (fofId !== userId && !alreadyFollowing.has(fofId) && !blockedUsers.has(fofId)) {
           fofScores.set(fofId, (fofScores.get(fofId) || 0) + 1);

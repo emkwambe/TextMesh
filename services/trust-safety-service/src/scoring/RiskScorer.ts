@@ -1,10 +1,11 @@
-// =================================
+﻿// =================================
 // TEXTMESH RISK SCORER
 // Unified Risk Assessment System
 // =================================
 
 import Redis from 'ioredis';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client'
+import { ReportStatus } from '@prisma/client';
 
 // ============ RISK SCORE TYPES ============
 
@@ -143,7 +144,7 @@ export class RiskScorer {
           isVerified: true,
           email: true,
           phone: true,
-          avatar: true,
+          avatarUrl: true,
           bio: true,
           followerCount: true,
           followingCount: true,
@@ -208,7 +209,7 @@ export class RiskScorer {
       }
 
       // Profile completeness
-      const hasProfile = user.avatar && user.bio;
+      const hasProfile = user.avatarUrl && user.bio;
       if (!hasProfile) {
         risk += 10;
         factors.push({
@@ -472,8 +473,8 @@ export class RiskScorer {
       // Check for reports against user
       const reportCount = await this.prisma.report.count({
         where: {
-          targetUserId: userId,
-          status: { in: ['pending', 'confirmed'] },
+          targetId: userId,
+          status: { in: [ReportStatus.OPEN, ReportStatus.RESOLVED] },
           createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
         },
       });
@@ -714,3 +715,4 @@ export class RiskScorer {
 }
 
 export default RiskScorer;
+

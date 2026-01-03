@@ -32,7 +32,7 @@ const MAX_PRECOMPUTE_POSTS = 500;
 
 export interface ScoredPost {
   postId: string;
-  authorId: string;
+  userId: string;
   score: number;
   components: {
     recency: number;
@@ -57,16 +57,16 @@ export class PrecomputeService {
       where: {
         createdAt: { gte: cutoff },
         deletedAt: null,
-        replyToId: null, // Only original posts
+        parentId: null, // Only original posts
       },
       select: {
         id: true,
-        authorId: true,
+        userId: true,
         createdAt: true,
         _count: {
           select: {
             likes: true,
-            comments: true,
+            replies: true,
             reposts: true,
           },
         },
@@ -78,7 +78,7 @@ export class PrecomputeService {
     // Calculate trending score
     const scoredPosts = posts.map((post) => {
       const ageHours = (Date.now() - post.createdAt.getTime()) / (1000 * 60 * 60);
-      const engagement = post._count.likes + post._count.comments * 2 + post._count.reposts * 3;
+      const engagement = post._count.likes + post._count.replies * 2 + post._count.reposts * 3;
 
       // Trending score: engagement / (age + 2)^gravity
       const gravity = 1.8;
@@ -86,7 +86,7 @@ export class PrecomputeService {
 
       return {
         postId: post.id,
-        authorId: post.authorId,
+        userId: post.userId,
         score,
       };
     });
@@ -103,7 +103,7 @@ export class PrecomputeService {
     for (const post of scoredPosts.slice(0, 100)) {
       pipeline.zadd(key, post.score, JSON.stringify({
         postId: post.postId,
-        authorId: post.authorId,
+        userId: post.userId,
         score: post.score,
       }));
     }
@@ -126,12 +126,12 @@ export class PrecomputeService {
     // Get users this person follows
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
-      select: { followingId: true },
+      select: { followeeId: true },
     });
-    const followingIds: Set<string> = new Set(following.map((f) => f.followingId as string));
+    const followeeIds: Set<string> = new Set(following.map((f) => f.followeeId as string));
 
     // Get recent posts from various sources
-    const candidatePosts = await this.getCandidatePosts(userId, followingIds);
+    const candidatePosts = await this.getCandidatePosts(userId, followeeIds);
 
     // Score each post
     const scoredPosts: ScoredPost[] = [];
@@ -140,10 +140,10 @@ export class PrecomputeService {
       const recency = this.calculateRecencyScore(post.createdAt);
       const engagement = this.calculateEngagementScore(
         post._count.likes,
-        post._count.comments,
+        post._count.replies,
         post._count.reposts
       );
-      const affinity = await this.calculateAffinityScore(userId, post.authorId, followingIds);
+      const affinity = await this.calculateAffinityScore(userId, post.userId, followeeIds);
       const relevance = this.calculateRelevanceScore(post, interests);
 
       const score =
@@ -154,7 +154,7 @@ export class PrecomputeService {
 
       scoredPosts.push({
         postId: post.id,
-        authorId: post.authorId,
+        userId: post.userId,
         score,
         components: {
           recency,
@@ -189,7 +189,7 @@ export class PrecomputeService {
    */
   private async getCandidatePosts(
     userId: string,
-    followingIds: Set<string>
+    followeeIds: Set<string>
   ): Promise<any[]> {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7); // Last 7 days
@@ -197,19 +197,19 @@ export class PrecomputeService {
     // Posts from followed users
     const followingPosts = await prisma.post.findMany({
       where: {
-        authorId: { in: [...followingIds] },
+        userId: { in: [...followeeIds] },
         createdAt: { gte: cutoff },
         deletedAt: null,
       },
       select: {
         id: true,
-        authorId: true,
+        userId: true,
         content: true,
         createdAt: true,
         _count: {
           select: {
             likes: true,
-            comments: true,
+            replies: true,
             reposts: true,
           },
         },
@@ -221,7 +221,7 @@ export class PrecomputeService {
     // Highly engaged posts from non-followed users
     const discoverPosts = await prisma.post.findMany({
       where: {
-        authorId: { notIn: [...followingIds, userId] },
+        userId: { notIn: [...followeeIds, userId] },
         createdAt: { gte: cutoff },
         deletedAt: null,
         likes: {
@@ -230,13 +230,13 @@ export class PrecomputeService {
       },
       select: {
         id: true,
-        authorId: true,
+        userId: true,
         content: true,
         createdAt: true,
         _count: {
           select: {
             likes: true,
-            comments: true,
+            replies: true,
             reposts: true,
           },
         },
@@ -259,18 +259,18 @@ export class PrecomputeService {
     engagedTopics: string[];
   }> {
     // Get authors user has liked
-    const likes = await prisma.like.findMany({
+    const likes = await prisma.postLike.findMany({
       where: { userId },
       select: {
         post: {
-          select: { authorId: true },
+          select: { userId: true },
         },
       },
       orderBy: { createdAt: 'desc' },
       take: 100,
     });
 
-    const likedAuthors: Set<string> = new Set(likes.map((l) => l.post.authorId as string));
+    const likedAuthors: Set<string> = new Set(likes.map((l) => l.post.userId as string));
 
     // Get topics from user's posts and likes (would need hashtag extraction)
     const engagedTopics: string[] = [];
@@ -293,11 +293,11 @@ export class PrecomputeService {
    */
   private calculateEngagementScore(
     likes: number,
-    comments: number,
+    replies: number,
     reposts: number
   ): number {
     // Weighted sum with diminishing returns
-    const raw = likes + comments * 2 + reposts * 3;
+    const raw = likes + replies * 2 + reposts * 3;
 
     // Logarithmic scaling to prevent viral posts from dominating
     return Math.log10(raw + 1) / 4; // Normalize to roughly 0-1 range
@@ -309,18 +309,18 @@ export class PrecomputeService {
   private async calculateAffinityScore(
     userId: string,
     authorId: string,
-    followingIds: Set<string>
+    followeeIds: Set<string>
   ): Promise<number> {
     // Base score for followed users
-    if (followingIds.has(authorId)) {
+    if (followeeIds.has(userId)) {
       return 0.8;
     }
 
     // Check if author is followed by people user follows (2nd degree)
     const mutualFollows = await prisma.follow.count({
       where: {
-        followingId: authorId,
-        followerId: { in: [...followingIds] },
+        followeeId: userId,
+        followerId: { in: [...followeeIds] },
       },
     });
 
@@ -341,7 +341,7 @@ export class PrecomputeService {
     let score = 0.3; // Base relevance
 
     // Boost if user has liked this author before
-    if (interests.likedAuthors.has(post.authorId)) {
+    if (interests.likedAuthors.has(post.userId)) {
       score += 0.4;
     }
 

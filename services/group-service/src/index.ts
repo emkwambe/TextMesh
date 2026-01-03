@@ -53,7 +53,7 @@ async function main() {
       if (existing) return res.status(409).json({ success: false, error: { code: ErrorCode.GROUP_SLUG_TAKEN, message: 'Slug is taken' } });
 
       const group = await prisma.group.create({
-        data: { ...data, ownerId: req.userId, memberCount: 1 },
+        data: { name: data.name, slug: data.slug, description: data.description, privacy: data.privacy, rules: data.rules, ownerId: req.userId, memberCount: 1 },
       });
 
       await prisma.groupMembership.create({

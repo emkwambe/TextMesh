@@ -4,7 +4,7 @@
 // =================================
 
 import Redis from 'ioredis';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, AppealStatus, type Prisma } from '@prisma/client';
 
 // ============ APPEAL TYPES ============
 
@@ -13,7 +13,7 @@ export interface Appeal {
   userId: string;
   type: AppealType;
   targetId: string; // ID of the content, ban, or action being appealed
-  status: AppealStatus;
+  status: string; // Using string to match Prisma's enum
   reason: string;
   evidence?: string;
   attachments?: string[];
@@ -35,13 +35,6 @@ export type AppealType =
   | 'warning'
   | 'verification_rejection'
   | 'monetization_rejection';
-
-export type AppealStatus =
-  | 'pending'
-  | 'under_review'
-  | 'escalated'
-  | 'resolved'
-  | 'withdrawn';
 
 export type AppealDecision =
   | 'upheld' // Original action stands
@@ -199,7 +192,7 @@ export class AppealManager {
       userId,
       type,
       targetId,
-      status: 'pending',
+      status: AppealStatus.PENDING,
       reason,
       evidence: options?.evidence,
       attachments: options?.attachments,
@@ -273,7 +266,7 @@ export class AppealManager {
       return { success: false, error: 'Appeal not found' };
     }
 
-    if (appeal.status === 'resolved') {
+    if (appeal.status === AppealStatus.RESOLVED) {
       return { success: false, error: 'Appeal already resolved' };
     }
 
@@ -282,7 +275,7 @@ export class AppealManager {
       await this.prisma.appeal.update({
         where: { id: appealId },
         data: {
-          status: 'resolved',
+          status: AppealStatus.RESOLVED,
           reviewedAt: new Date(),
           reviewedBy: reviewerId,
           decision,
@@ -324,7 +317,7 @@ export class AppealManager {
       return { success: false, error: 'Appeal not found' };
     }
 
-    if (appeal.status === 'resolved' || appeal.status === 'escalated') {
+    if (appeal.status === AppealStatus.RESOLVED || appeal.status === AppealStatus.ESCALATED) {
       return { success: false, error: 'Appeal cannot be escalated' };
     }
 
@@ -332,7 +325,7 @@ export class AppealManager {
       await this.prisma.appeal.update({
         where: { id: appealId },
         data: {
-          status: 'escalated',
+          status: AppealStatus.ESCALATED,
           escalatedAt: new Date(),
           escalatedTo: 'senior_moderator',
         },
@@ -363,14 +356,14 @@ export class AppealManager {
       return { success: false, error: 'Unauthorized' };
     }
 
-    if (appeal.status === 'resolved') {
+    if (appeal.status === AppealStatus.RESOLVED) {
       return { success: false, error: 'Cannot withdraw resolved appeal' };
     }
 
     try {
       await this.prisma.appeal.update({
         where: { id: appealId },
-        data: { status: 'withdrawn' },
+        data: { status: AppealStatus.WITHDRAWN },
       });
 
       return { success: true };
@@ -388,7 +381,7 @@ export class AppealManager {
     try {
       const appeals = await this.prisma.appeal.findMany({
         where: {
-          status: { in: ['pending', 'under_review'] },
+          status: { in: [AppealStatus.PENDING, AppealStatus.UNDER_REVIEW] },
           ...(options?.type && { type: options.type }),
         },
         orderBy: { submittedAt: 'asc' },
@@ -413,8 +406,8 @@ export class AppealManager {
     try {
       const [total, pending, resolved, overturned, byType] = await Promise.all([
         this.prisma.appeal.count({ where: dateFilter }),
-        this.prisma.appeal.count({ where: { ...dateFilter, status: 'pending' } }),
-        this.prisma.appeal.count({ where: { ...dateFilter, status: 'resolved' } }),
+        this.prisma.appeal.count({ where: { ...dateFilter, status: AppealStatus.PENDING } }),
+        this.prisma.appeal.count({ where: { ...dateFilter, status: AppealStatus.RESOLVED } }),
         this.prisma.appeal.count({
           where: { ...dateFilter, decision: 'overturned' },
         }),
@@ -427,7 +420,7 @@ export class AppealManager {
 
       // Calculate average resolution time
       const resolvedAppeals = await this.prisma.appeal.findMany({
-        where: { ...dateFilter, status: 'resolved' },
+        where: { ...dateFilter, status: AppealStatus.RESOLVED },
         select: { submittedAt: true, reviewedAt: true },
       });
 
@@ -530,7 +523,7 @@ export class AppealManager {
           userId,
           type,
           targetId,
-          status: { notIn: ['resolved', 'withdrawn'] },
+          status: { notIn: [AppealStatus.RESOLVED, AppealStatus.WITHDRAWN] },
         },
       });
 
@@ -557,20 +550,21 @@ export class AppealManager {
 
   private async storeAppeal(appeal: Appeal): Promise<void> {
     try {
-      await this.prisma.appeal.create({
-        data: {
-          id: appeal.id,
-          userId: appeal.userId,
-          type: appeal.type,
-          targetId: appeal.targetId,
-          status: appeal.status,
-          reason: appeal.reason,
-          evidence: appeal.evidence,
-          attachments: appeal.attachments,
-          submittedAt: appeal.submittedAt,
-          metadata: appeal.metadata as Record<string, unknown>,
-        },
-      });
+      const data: Prisma.AppealCreateInput = {
+        id: appeal.id,
+        userId: appeal.userId,
+        type: appeal.type,
+        targetId: appeal.targetId,
+        actionId: appeal.id, // Using appeal id as actionId for now
+        actionType: appeal.type,
+        status: appeal.status as AppealStatus,
+        reason: appeal.reason,
+        evidence: appeal.evidence,
+        attachments: appeal.attachments ? (appeal.attachments as unknown as Prisma.InputJsonValue) : undefined,
+        submittedAt: appeal.submittedAt,
+        metadata: appeal.metadata ? (appeal.metadata as unknown as Prisma.InputJsonValue) : undefined,
+      };
+      await this.prisma.appeal.create({ data });
     } catch (error) {
       console.error('Failed to store appeal:', error);
       throw error;
@@ -692,10 +686,10 @@ export class AppealManager {
     userId: string;
     type: string;
     targetId: string;
-    status: string;
+    status: AppealStatus;
     reason: string;
     evidence?: string | null;
-    attachments?: string[] | null;
+    attachments?: Prisma.JsonValue;
     submittedAt: Date;
     reviewedAt?: Date | null;
     reviewedBy?: string | null;
@@ -703,17 +697,17 @@ export class AppealManager {
     decisionReason?: string | null;
     escalatedAt?: Date | null;
     escalatedTo?: string | null;
-    metadata?: unknown;
+    metadata?: Prisma.JsonValue;
   }): Appeal {
     return {
       id: prismaAppeal.id,
       userId: prismaAppeal.userId,
       type: prismaAppeal.type as AppealType,
       targetId: prismaAppeal.targetId,
-      status: prismaAppeal.status as AppealStatus,
+      status: prismaAppeal.status,
       reason: prismaAppeal.reason,
       evidence: prismaAppeal.evidence || undefined,
-      attachments: prismaAppeal.attachments || undefined,
+      attachments: Array.isArray(prismaAppeal.attachments) ? prismaAppeal.attachments as string[] : undefined,
       submittedAt: prismaAppeal.submittedAt,
       reviewedAt: prismaAppeal.reviewedAt || undefined,
       reviewedBy: prismaAppeal.reviewedBy || undefined,

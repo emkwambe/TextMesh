@@ -3,6 +3,7 @@
 // =================================
 
 import express from 'express';
+import cors from 'cors';
 import { createLogger } from '@textmesh/logger';
 import { getPrismaClient, disconnectPrisma, getRedisClient, disconnectRedis } from '@textmesh/db-client';
 import { createEventBus } from '@textmesh/event-bus';
@@ -46,6 +47,7 @@ async function main() {
     const app = express();
 
     // Middleware
+    app.use(cors({ origin: ['http://localhost:3100', 'http://localhost:3000'], credentials: true }));
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
 

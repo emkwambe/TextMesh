@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Media Service
  *
  * Core business logic for media operations:
@@ -27,7 +27,7 @@ export interface UploadInput {
     mimetype: string;
     size: number;
   };
-  type: 'avatar' | 'banner' | 'post' | 'message' | 'video';
+  type: 'AVATAR' | 'BANNER' | 'POST' | 'MESSAGE' | 'VIDEO';
   metadata?: Record<string, any>;
 }
 
@@ -43,7 +43,7 @@ export interface MediaRecord {
   duration?: number;
   size: number;
   mimeType: string;
-  status: 'processing' | 'ready' | 'failed';
+  status: 'PROCESSING' | 'READY' | 'FAILED';
   metadata?: Record<string, any>;
   createdAt: Date;
 }
@@ -84,9 +84,9 @@ export class MediaService {
       const media = await prisma.media.create({
         data: {
           id: mediaId,
-          userId,
+          user: { connect: { id: userId } },
           type,
-          status: 'processing',
+          status: 'PROCESSING',
           originalFilename: file.originalname,
           mimeType: file.mimetype,
           size: file.size,
@@ -99,7 +99,7 @@ export class MediaService {
       let variants: Record<string, string> = {};
 
       switch (type) {
-        case 'avatar':
+        case 'AVATAR':
           const avatarResult = await imageProcessor.processAvatar(file.buffer);
 
           // Upload original and small
@@ -123,7 +123,7 @@ export class MediaService {
           };
           break;
 
-        case 'banner':
+        case 'BANNER':
           const bannerResult = await imageProcessor.processBanner(file.buffer);
           const bannerUpload = await s3Provider.upload(
             s3Provider.generateKey('images', userId, `${mediaId}-banner.webp`),
@@ -135,8 +135,8 @@ export class MediaService {
           variants = { original: bannerUpload.url };
           break;
 
-        case 'post':
-        case 'message':
+        case 'POST':
+        case 'MESSAGE':
           const postResult = await imageProcessor.processPostImage(file.buffer);
 
           const [postOriginal, postMedium, postThumb] = await Promise.all([
@@ -181,7 +181,7 @@ export class MediaService {
       const updatedMedia = await prisma.media.update({
         where: { id: mediaId },
         data: {
-          status: 'ready',
+          status: 'READY',
           url: variants.original || variants[Object.keys(variants)[0]],
           thumbnailUrl: variants.thumbnail,
           variants,
@@ -206,7 +206,7 @@ export class MediaService {
       // Mark as failed
       await prisma.media.update({
         where: { id: mediaId },
-        data: { status: 'failed' },
+        data: { status: 'FAILED' },
       }).catch(() => {});
 
       logger.error('Failed to upload image', { mediaId, error });
@@ -239,9 +239,9 @@ export class MediaService {
       const media = await prisma.media.create({
         data: {
           id: mediaId,
-          userId,
-          type: 'video',
-          status: 'processing',
+          user: { connect: { id: userId } },
+          type: 'VIDEO',
+          status: 'PROCESSING',
           originalFilename: file.originalname,
           mimeType: file.mimetype,
           size: file.size,
@@ -298,7 +298,7 @@ export class MediaService {
       const updatedMedia = await prisma.media.update({
         where: { id: mediaId },
         data: {
-          status: 'ready',
+          status: 'READY',
           url: variants['720p'] || variants[Object.keys(variants)[0]],
           thumbnailUrl: thumbUpload.url,
           variants,
@@ -316,7 +316,7 @@ export class MediaService {
       await publishEvent(EventType.MEDIA_UPLOADED, {
         mediaId,
         userId,
-        type: 'video',
+        type: 'VIDEO',
         url: updatedMedia.url,
         duration: videoMeta.duration,
       });
@@ -331,7 +331,7 @@ export class MediaService {
       // Mark as failed
       await prisma.media.update({
         where: { id: mediaId },
-        data: { status: 'failed' },
+        data: { status: 'FAILED' },
       }).catch(() => {});
 
       logger.error('Failed to upload video', { mediaId, error });
@@ -384,14 +384,19 @@ export class MediaService {
    */
   async confirmUpload(
     uploadId: string,
-    type: 'avatar' | 'banner' | 'post' | 'message' | 'video'
+    type: 'AVATAR' | 'BANNER' | 'POST' | 'MESSAGE' | 'VIDEO'
   ): Promise<MediaRecord> {
     const pendingData = await redis.get(`upload:pending:${uploadId}`);
     if (!pendingData) {
       throw new Error('Upload not found or expired');
     }
 
-    const { userId, key, filename, contentType } = JSON.parse(pendingData);
+    const { userId, key, filename, contentType } = JSON.parse(pendingData) as {
+      userId: string;
+      key: string;
+      filename: string;
+      contentType: string;
+    };
 
     // Check if file exists in S3
     const exists = await s3Provider.exists(key);
@@ -415,13 +420,14 @@ export class MediaService {
     const media = await prisma.media.create({
       data: {
         id: mediaId,
-        userId,
+        user: { connect: { id: userId } },
         type,
-        status: 'ready',
+        status: 'READY',
         url: s3Provider.getPublicUrl(key),
         originalFilename: filename,
         mimeType: contentType,
         size: metadata.contentLength || 0,
+        metadata: {},
       },
     });
 
@@ -473,8 +479,8 @@ export class MediaService {
     const media = await prisma.media.findMany({
       where: {
         userId,
-        ...(type && { type }),
-        status: 'ready',
+        ...(type && { type: type as any }),
+        status: 'READY',
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -633,3 +639,4 @@ export class MediaService {
 }
 
 export const mediaService = new MediaService();
+

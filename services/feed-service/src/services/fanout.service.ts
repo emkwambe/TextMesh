@@ -21,10 +21,10 @@ const FEED_TTL = 86400 * 7; // 7 days
 
 export interface PostData {
   id: string;
-  authorId: string;
+  userId: string;
   content: string;
   createdAt: Date;
-  replyToId?: string;
+  parentId?: string;
   quotePostId?: string;
   mediaUrls?: string[];
   type: 'post' | 'reply' | 'repost';
@@ -32,7 +32,7 @@ export interface PostData {
 
 export interface FeedEntry {
   postId: string;
-  authorId: string;
+  userId: string;
   score: number; // timestamp for sorting
   type: 'original' | 'repost' | 'reply';
   repostedBy?: string;
@@ -43,17 +43,17 @@ export class FanoutService {
    * Fan out a new post to followers
    */
   async fanoutPost(post: PostData): Promise<void> {
-    const { id: postId, authorId } = post;
+    const { id: postId, userId } = post;
 
-    logger.info('Starting fanout', { postId, authorId });
+    logger.info('Starting fanout', { postId, userId });
 
     // Get follower count
-    const followerCount = await this.getFollowerCount(authorId);
+    const followerCount = await this.getFollowerCount(userId);
 
     // Check if author is a celebrity (high follower count)
     if (followerCount > CELEBRITY_THRESHOLD) {
       // Use hybrid approach - don't fan out, followers will pull
-      logger.info('Celebrity account, using pull model', { authorId, followerCount });
+      logger.info('Celebrity account, using pull model', { userId, followerCount });
       await this.markCelebrityPost(post);
       return;
     }
@@ -63,7 +63,7 @@ export class FanoutService {
     let processedCount = 0;
 
     while (true) {
-      const followers = await this.getFollowersBatch(authorId, cursor, BATCH_SIZE);
+      const followers = await this.getFollowersBatch(userId, cursor, BATCH_SIZE);
 
       if (followers.length === 0) {
         break;
@@ -84,9 +84,9 @@ export class FanoutService {
     }
 
     // Also add to author's own feed
-    await this.addToFeed(authorId, post);
+    await this.addToFeed(userId, post);
 
-    logger.info('Fanout complete', { postId, authorId, followerCount: processedCount });
+    logger.info('Fanout complete', { postId, userId, followerCount: processedCount });
   }
 
   /**
@@ -103,7 +103,7 @@ export class FanoutService {
 
     const entry: FeedEntry = {
       postId: post.id,
-      authorId: post.authorId,
+      userId: post.userId,
       score,
       type,
       ...(repostedBy && { repostedBy }),
@@ -123,11 +123,11 @@ export class FanoutService {
    * Remove a post from all followers' feeds (on delete)
    */
   async removeFanout(post: PostData): Promise<void> {
-    const { id: postId, authorId } = post;
+    const { id: postId, userId } = post;
 
-    logger.info('Removing fanout', { postId, authorId });
+    logger.info('Removing fanout', { postId, userId });
 
-    const followerCount = await this.getFollowerCount(authorId);
+    const followerCount = await this.getFollowerCount(userId);
 
     // For celebrities, just mark the post as deleted
     if (followerCount > CELEBRITY_THRESHOLD) {
@@ -139,7 +139,7 @@ export class FanoutService {
     let cursor = 0;
 
     while (true) {
-      const followers = await this.getFollowersBatch(authorId, cursor, BATCH_SIZE);
+      const followers = await this.getFollowersBatch(userId, cursor, BATCH_SIZE);
 
       if (followers.length === 0) {
         break;
@@ -168,7 +168,7 @@ export class FanoutService {
     }
 
     // Remove from author's feed
-    await this.removeFromFeed(authorId, postId);
+    await this.removeFromFeed(userId, postId);
 
     logger.info('Fanout removal complete', { postId });
   }
@@ -297,25 +297,25 @@ export class FanoutService {
     // Get users this person follows
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
-      select: { followingId: true },
+      select: { followeeId: true },
     });
 
-    const followingIds = following.map((f) => f.followingId);
+    const followeeIds = following.map((f) => f.followeeId);
 
     // Get recent posts from followed users
     const posts = await prisma.post.findMany({
       where: {
-        authorId: { in: followingIds },
+        userId: { in: followeeIds },
         deletedAt: null,
       },
       orderBy: { createdAt: 'desc' },
       take: FEED_MAX_SIZE,
       select: {
         id: true,
-        authorId: true,
+        userId: true,
         createdAt: true,
-        replyToId: true,
-        quotePostId: true,
+        parentId: true,
+        
       },
     });
 
@@ -325,9 +325,9 @@ export class FanoutService {
     for (const post of posts) {
       const entry: FeedEntry = {
         postId: post.id,
-        authorId: post.authorId,
+        userId: post.userId,
         score: post.createdAt.getTime(),
-        type: post.replyToId ? 'reply' : 'original',
+        type: post.parentId ? 'reply' : 'original',
       };
 
       pipeline.zadd(feedKey, post.createdAt.getTime(), JSON.stringify(entry));
@@ -343,14 +343,14 @@ export class FanoutService {
    * Mark a post from celebrity for pull model
    */
   private async markCelebrityPost(post: PostData): Promise<void> {
-    const key = `celebrity:posts:${post.authorId}`;
+    const key = `celebrity:posts:${post.userId}`;
     const score = post.createdAt.getTime();
 
     const entry: FeedEntry = {
       postId: post.id,
-      authorId: post.authorId,
+      userId: post.userId,
       score,
-      type: post.replyToId ? 'reply' : 'original',
+      type: post.parentId ? 'reply' : 'original',
     };
 
     await redis.zadd(key, score, JSON.stringify(entry));
@@ -370,7 +370,7 @@ export class FanoutService {
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
       include: {
-        following: {
+        followee: {
           select: {
             id: true,
             _count: { select: { followers: true } },
@@ -380,8 +380,8 @@ export class FanoutService {
     });
 
     const celebrities = following
-      .filter((f) => f.following._count.followers > CELEBRITY_THRESHOLD)
-      .map((f) => f.followingId);
+      .filter((f) => f.followee._count.followers > CELEBRITY_THRESHOLD)
+      .map((f) => f.followeeId);
 
     if (celebrities.length === 0) {
       return feedEntries;
@@ -437,7 +437,7 @@ export class FanoutService {
     }
 
     const count = await prisma.follow.count({
-      where: { followingId: userId },
+      where: { followeeId: userId },
     });
 
     await redis.setex(cacheKey, 300, count.toString());
@@ -454,7 +454,7 @@ export class FanoutService {
     limit: number
   ): Promise<string[]> {
     const followers = await prisma.follow.findMany({
-      where: { followingId: userId },
+      where: { followeeId: userId },
       select: { followerId: true },
       skip: offset,
       take: limit,
@@ -480,13 +480,13 @@ export async function initializeFanoutHandlers(eventBus?: { on: (eventType: stri
     const data = event.payload || event;
     const post: PostData = {
       id: data.postId,
-      authorId: data.authorId,
+      userId: data.userId,
       content: data.content,
       createdAt: new Date(data.createdAt),
-      replyToId: data.replyToId,
+      parentId: data.parentId,
       quotePostId: data.quotePostId,
       mediaUrls: data.mediaUrls,
-      type: data.replyToId ? 'reply' : 'post',
+      type: data.parentId ? 'reply' : 'post',
     };
 
     await fanoutService.fanoutPost(post);
@@ -496,7 +496,7 @@ export async function initializeFanoutHandlers(eventBus?: { on: (eventType: stri
     const data = event.payload || event;
     const post: PostData = {
       id: data.postId,
-      authorId: data.authorId,
+      userId: data.userId,
       content: '',
       createdAt: new Date(),
       type: 'post',

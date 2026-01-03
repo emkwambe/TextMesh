@@ -1,4 +1,4 @@
-// =================================
+﻿// =================================
 // TEXTMESH BEHAVIOR ANALYZER
 // User Behavior Pattern Detection
 // =================================
@@ -613,7 +613,7 @@ export class BehaviorAnalyzer {
         where: { id: userId },
         select: {
           bio: true,
-          avatar: true,
+          avatarUrl: true,
           displayName: true,
           website: true,
           location: true,
@@ -624,7 +624,7 @@ export class BehaviorAnalyzer {
 
       let score = 0;
       if (user.bio) score += 0.3;
-      if (user.avatar) score += 0.3;
+      if (user.avatarUrl) score += 0.3;
       if (user.displayName) score += 0.2;
       if (user.website) score += 0.1;
       if (user.location) score += 0.1;

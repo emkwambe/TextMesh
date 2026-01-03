@@ -459,16 +459,15 @@ export class NotificationCampaigns {
     }
 
     // Check onboarding status
-    // TODO: Re-enable when onboardingCompleted field is added to User model
-    // if (audience.hasCompletedOnboarding !== undefined) {
-    //   const user = await this.prisma.user.findUnique({
-    //     where: { id: userId },
-    //     select: { onboardingCompleted: true },
-    //   });
-    //   if (user?.onboardingCompleted !== audience.hasCompletedOnboarding) {
-    //     return false;
-    //   }
-    // }
+    if (audience.hasCompletedOnboarding !== undefined) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { onboardingCompleted: true },
+      });
+      if (user?.onboardingCompleted !== audience.hasCompletedOnboarding) {
+        return false;
+      }
+    }
 
     // Check follower count
     if (audience.minFollowers !== undefined || audience.maxFollowers !== undefined) {

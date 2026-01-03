@@ -190,8 +190,7 @@ export class FollowSuggestions {
         where: {
           id: { notIn: [...excludeIds] },
           isVerified: true,
-          // TODO: Re-enable when isBanned field is added to User model
-          // isBanned: false,
+          isBanned: false,
         },
         orderBy: { followerCount: 'desc' },
         take: limit * 2,
@@ -410,8 +409,7 @@ export class FollowSuggestions {
         where: {
           id: { notIn: [...excludeIds] },
           location: { contains: user.location, mode: 'insensitive' },
-          // TODO: Re-enable when isBanned field is added to User model
-          // isBanned: false,
+          isBanned: false,
         },
         take: limit,
         select: {

@@ -1,4 +1,4 @@
-// =================================
+﻿// =================================
 // TEXTMESH RETENTION HOOKS
 // User Retention & Lifecycle Management
 // =================================
@@ -399,7 +399,7 @@ export class RetentionHooks {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
-        avatar: true,
+        avatarUrl: true,
         bio: true,
         displayName: true,
         followerCount: true,
@@ -414,7 +414,7 @@ export class RetentionHooks {
 
     return {
       hasProfile: !!user?.displayName,
-      hasAvatar: !!user?.avatar,
+      hasAvatar: !!user?.avatarUrl,
       hasBio: !!user?.bio,
       followsCount: user?.followingCount || 0,
       postsCount: parseInt(postsCount || '0', 10),
@@ -427,7 +427,7 @@ export class RetentionHooks {
     let progress = 0;
     const weights = {
       profile: 10,
-      avatar: 10,
+      avatarUrl: 10,
       bio: 10,
       follows: 30,
       posts: 20,
@@ -436,7 +436,7 @@ export class RetentionHooks {
     };
 
     if (criteria.hasProfile) progress += weights.profile;
-    if (criteria.hasAvatar) progress += weights.avatar;
+    if (criteria.hasAvatar) progress += weights.avatarUrl;
     if (criteria.hasBio) progress += weights.bio;
 
     progress += Math.min(weights.follows, (criteria.followsCount / ACTIVATION_THRESHOLDS.minFollows) * weights.follows);

@@ -390,10 +390,10 @@ export class RankingEngine {
       // Get users that this user follows
       const following = await this.prisma.follow.findMany({
         where: { followerId: userId },
-        select: { followingId: true },
+        select: { followeeId: true },
       });
 
-      following.forEach((f) => affinities.following.add(f.followingId));
+      following.forEach((f) => affinities.following.add(f.followeeId));
 
       // Get interaction-based affinities
       // In production, aggregate from user_interactions table

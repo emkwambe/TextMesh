@@ -27,17 +27,20 @@ model User {
   authProvider    AuthProvider @default(EMAIL)
   status          AccountStatus @default(ACTIVE)
   role            UserRole @default(USER)
-  followerCount   Int       @default(0)
-  followingCount  Int       @default(0)
-  postCount       Int       @default(0)
-  isVerified      Boolean   @default(false)
-  isPrivate       Boolean   @default(false)
-  dateOfBirth     DateTime? @db.Date
-  location        String?   @db.VarChar(100)
-  website         String?   @db.VarChar(200)
-  lastActiveAt    DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  followerCount        Int       @default(0)
+  followingCount       Int       @default(0)
+  postCount            Int       @default(0)
+  isVerified           Boolean   @default(false)
+  isPrivate            Boolean   @default(false)
+  onboardingCompleted  Boolean   @default(false)
+  isBanned             Boolean   @default(false)
+  banReason            String?   @db.VarChar(500)
+  dateOfBirth          DateTime? @db.Date
+  location             String?   @db.VarChar(100)
+  website              String?   @db.VarChar(200)
+  lastActiveAt         DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   // Relations
   posts           Post[]
@@ -65,6 +68,10 @@ model User {
   moderationLogs  ModerationLog[]
   auditLogs       AuditLog[]
   dataExports     DataExport[]
+  conversationParticipations ConversationParticipant[]
+  sentMessages    Message[]
+  messageReadReceipts MessageReadReceipt[]
+  messageReactions MessageReaction[]
 
   @@index([username])
   @@index([email])
@@ -139,6 +146,8 @@ model Post {
   editedAt    DateTime?
   isDeleted   Boolean        @default(false)
   deletedAt   DateTime?
+  isHidden    Boolean        @default(false)
+  moderationStatus String?    @db.VarChar(50)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -393,8 +402,8 @@ model Report {
 
   reporter    User   @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
   resolver    User?  @relation("ReportsResolved", fields: [resolvedBy], references: [id])
-  targetPost  Post?  @relation(fields: [targetId], references: [id], onDelete: Cascade)
-  targetGroup Group? @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  targetPost  Post?  @relation(fields: [targetId], references: [id], onDelete: Cascade, map: "Report_targetPost_fkey")
+  targetGroup Group? @relation(fields: [targetId], references: [id], onDelete: Cascade, map: "Report_targetGroup_fkey")
 
   @@index([status])
   @@index([targetType, targetId])
@@ -430,6 +439,79 @@ model ContentFilter {
   updatedAt DateTime            @updatedAt
 
   @@index([isActive])
+}
+
+model Violation {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @db.Uuid
+  type        ViolationType
+  severity    ViolationSeverity
+  description String?        @db.Text
+  metadata    Json?
+  createdAt   DateTime       @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model Warning {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  reason        String   @db.VarChar(500)
+  issuedBy      String   @db.Uuid
+  acknowledged  Boolean  @default(false)
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([issuedBy])
+}
+
+model ShadowBan {
+  id          String         @id @default(uuid()) @db.Uuid
+  userId      String         @db.Uuid
+  type        String         @db.VarChar(50)
+  scope       String         @db.VarChar(100)
+  reason      String         @db.VarChar(500)
+  severity    String         @db.VarChar(50)
+  level       ShadowBanLevel @default(PARTIAL)
+  issuedBy    String         @db.Uuid
+  expiresAt   DateTime?
+  createdAt   DateTime       @default(now())
+  revokedAt   DateTime?
+
+  @@index([userId])
+  @@index([issuedBy])
+  @@index([expiresAt])
+}
+
+model Appeal {
+  id              String       @id @default(uuid()) @db.Uuid
+  userId          String       @db.Uuid
+  type            String       @db.VarChar(50)
+  targetId        String       @db.Uuid
+  actionId        String       @db.Uuid
+  actionType      String       @db.VarChar(50)
+  reason          String       @db.Text
+  evidence        String?      @db.Text
+  attachments     Json?
+  status          AppealStatus @default(PENDING)
+  decision        String?      @db.VarChar(50)
+  decisionReason  String?      @db.Text
+  reviewedBy      String?      @db.Uuid
+  resolution      String?      @db.Text
+  escalatedAt     DateTime?
+  escalatedTo     String?      @db.VarChar(100)
+  metadata        Json?
+  submittedAt     DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  reviewedAt      DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@index([actionId])
 }
 
 // =================================
@@ -503,16 +585,23 @@ model LoginAttempt {
 // =================================
 
 model Media {
-  id           String      @id @default(uuid()) @db.Uuid
-  postId       String?     @db.Uuid
-  userId       String      @db.Uuid
-  type         MediaType
-  url          String      @db.VarChar(500)
-  thumbnailUrl String?     @db.VarChar(500)
-  metadata     Json
-  status       MediaStatus @default(UPLOADING)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id               String      @id @default(uuid()) @db.Uuid
+  postId           String?     @db.Uuid
+  userId           String      @db.Uuid
+  type             MediaType
+  url              String?     @db.VarChar(500)
+  thumbnailUrl     String?     @db.VarChar(500)
+  mimeType         String?     @db.VarChar(100)
+  size             BigInt?
+  width            Int?
+  height           Int?
+  duration         Int?
+  originalFilename String?     @db.VarChar(255)
+  variants         Json?
+  metadata         Json
+  status           MediaStatus @default(UPLOADING)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   post Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -527,15 +616,24 @@ model Media {
 // =================================
 
 model AuditLog {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String?  @db.Uuid
-  action    String   @db.VarChar(50)
-  resource  String   @db.VarChar(50)
-  resourceId String? @db.Uuid
-  metadata  Json?
-  ipAddress String?  @db.VarChar(45)
-  userAgent String?  @db.VarChar(500)
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String?  @db.Uuid
+  category    String?  @db.VarChar(50)
+  action      String   @db.VarChar(50)
+  actorId     String?  @db.VarChar(100)
+  actorType   String?  @db.VarChar(50)
+  targetId    String?  @db.VarChar(100)
+  targetType  String?  @db.VarChar(50)
+  resource    String   @db.VarChar(50)
+  resourceId  String?  @db.Uuid
+  details     Json?
+  outcome     String?  @db.VarChar(50)
+  metadata    Json?
+  ipAddress   String?  @db.VarChar(45)
+  userAgent   String?  @db.VarChar(500)
+  sessionId   String?  @db.VarChar(100)
+  requestId   String?  @db.VarChar(100)
+  createdAt   DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -663,6 +761,10 @@ enum ReportStatus {
 enum MediaType {
   IMAGE
   VIDEO
+  AVATAR
+  BANNER
+  POST
+  MESSAGE
 }
 
 enum MediaStatus {
@@ -724,4 +826,129 @@ enum DataExportStatus {
   READY
   EXPIRED
   FAILED
+}
+
+// =================================
+// CONVERSATIONS (for realtime messaging)
+// =================================
+model Conversation {
+  id           String                    @id @default(uuid()) @db.Uuid
+  type         ConversationType          @default(DIRECT)
+  name         String?                   @db.VarChar(100)
+  creatorId    String?                   @db.Uuid
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([createdAt])
+  @@index([creatorId])
+}
+
+model ConversationParticipant {
+  conversationId String    @db.Uuid
+  userId         String    @db.Uuid
+  joinedAt       DateTime  @default(now())
+  lastReadAt     DateTime  @default(now())
+  leftAt         DateTime?
+  deletedAt      DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id             String      @id @default(uuid()) @db.Uuid
+  conversationId String      @db.Uuid
+  senderId       String      @db.Uuid
+  content        String      @db.Text
+  replyToId      String?     @db.Uuid
+  attachments    Json?
+  isDeleted      Boolean     @default(false)
+  deletedAt      DateTime?
+  isEdited       Boolean     @default(false)
+  editedAt       DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  replyTo        Message?     @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        Message[]    @relation("MessageReplies")
+  readBy         MessageReadReceipt[]
+  reactions      MessageReaction[]
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@index([replyToId])
+}
+
+model MessageReadReceipt {
+  messageId String   @db.Uuid
+  userId    String   @db.Uuid
+  readAt    DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId])
+  @@index([userId])
+}
+
+model MessageReaction {
+  messageId String   @db.Uuid
+  userId    String   @db.Uuid
+  emoji     String   @db.VarChar(10)
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([messageId, userId, emoji])
+  @@unique([messageId, userId, emoji], name: "messageId_userId_emoji")
+  @@index([messageId])
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum ViolationType {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  VIOLENCE
+  MISINFORMATION
+  NUDITY
+  SELF_HARM
+  IMPERSONATION
+  COPYRIGHT
+  OTHER
+}
+
+enum ViolationSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ShadowBanLevel {
+  PARTIAL
+  FULL
+}
+
+enum AppealStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  RESOLVED
+  WITHDRAWN
+  ESCALATED
 }

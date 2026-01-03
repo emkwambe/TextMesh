@@ -502,11 +502,9 @@ export class ShadowBanManager {
           type: ban.type,
           scope: ban.scope,
           reason: ban.reason,
-          severity: ban.severity,
-          startedAt: ban.startedAt,
+          severity: String(ban.severity),
+          issuedBy: ban.createdBy,
           expiresAt: ban.expiresAt,
-          createdBy: ban.createdBy,
-          metadata: ban.metadata as Record<string, unknown>,
         },
       });
     } catch {

@@ -1,4 +1,4 @@
-// =================================
+﻿// =================================
 // TEXTMESH REFERRAL SYSTEM
 // User Referral & Rewards
 // =================================
@@ -264,14 +264,14 @@ export class ReferralSystem {
 
       const user = await this.prisma.user.findUnique({
         where: { id: odUserId },
-        select: { username: true, avatar: true },
+        select: { username: true, avatarUrl: true },
       });
 
       if (user) {
         results.push({
           userId: odUserId,
           username: user.username,
-          avatar: user.avatar || undefined,
+          avatar: user.avatarUrl || undefined,
           referralCount: count,
           tier: this.getTierForCount(count),
         });
@@ -452,14 +452,14 @@ export class ReferralSystem {
       const entryData = await this.redis.hgetall(`referral:entry:${userId}:${refereeId}`);
       const referee = await this.prisma.user.findUnique({
         where: { id: refereeId },
-        select: { username: true, avatar: true },
+        select: { username: true, avatarUrl: true },
       });
 
       if (referee && entryData) {
         entries.push({
           refereeId,
           refereeUsername: referee.username,
-          refereeAvatar: referee.avatar || undefined,
+          refereeAvatar: referee.avatarUrl || undefined,
           status: (entryData['status'] as 'pending' | 'completed' | 'expired') || 'pending',
           joinedAt: new Date(entryData['joined_at'] || Date.now()),
           completedAt: entryData['completed_at'] ? new Date(entryData['completed_at']) : undefined,
@@ -472,3 +472,5 @@ export class ReferralSystem {
 }
 
 export default ReferralSystem;
+
+

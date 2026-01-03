@@ -159,19 +159,19 @@ export class PresenceManager {
     // Get users this user follows who also follow them back (mutual)
     const following = await prisma.follow.findMany({
       where: { followerId: userId },
-      select: { followingId: true },
+      select: { followeeId: true },
     });
 
-    const followingIds = following.map((f) => f.followingId);
+    const followeeIds = following.map((f) => f.followeeId);
 
-    if (followingIds.length === 0) {
+    if (followeeIds.length === 0) {
       return [];
     }
 
     const mutuals = await prisma.follow.findMany({
       where: {
-        followerId: { in: followingIds },
-        followingId: userId,
+        followerId: { in: followeeIds },
+        followeeId: userId,
       },
       select: { followerId: true },
     });

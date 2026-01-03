@@ -328,7 +328,7 @@ export class ColdStartEngine {
       const users = await this.prisma.user.findMany({
         where: {
           isVerified: true,
-          isBanned: false,
+          status: 'ACTIVE',
         },
         orderBy: {
           followerCount: 'desc',
@@ -338,7 +338,7 @@ export class ColdStartEngine {
           id: true,
           username: true,
           displayName: true,
-          avatar: true,
+          avatarUrl: true,
           bio: true,
           followerCount: true,
         },
@@ -348,7 +348,7 @@ export class ColdStartEngine {
         userId: user.id,
         username: user.username,
         displayName: user.displayName,
-        avatar: user.avatar || undefined,
+        avatarUrl: user.avatarUrl || undefined,
         bio: user.bio || undefined,
         followerCount: user.followerCount,
         category: 'popular',
@@ -370,12 +370,12 @@ export class ColdStartEngine {
       const following = await this.prisma.follow.findMany({
         where: { followerId: referrerId },
         include: {
-          following: {
+          followee: {
             select: {
               id: true,
               username: true,
               displayName: true,
-              avatar: true,
+              avatarUrl: true,
               bio: true,
               followerCount: true,
             },
@@ -385,12 +385,12 @@ export class ColdStartEngine {
       });
 
       return following.map((f) => ({
-        userId: f.following.id,
-        username: f.following.username,
-        displayName: f.following.displayName,
-        avatar: f.following.avatar || undefined,
-        bio: f.following.bio || undefined,
-        followerCount: f.following.followerCount,
+        userId: f.followee.id,
+        username: f.followee.username,
+        displayName: f.followee.displayName,
+        avatarUrl: f.followee.avatarUrl || undefined,
+        bio: f.followee.bio || undefined,
+        followerCount: f.followee.followerCount,
         category: 'referral',
         score: 0.8, // High score for referrer's connections
       }));

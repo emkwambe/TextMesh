@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    root: "../..",
+  },
   reactStrictMode: true,
   transpilePackages: ['@textmesh/brand-identity', '@textmesh/shared-types'],
   images: {

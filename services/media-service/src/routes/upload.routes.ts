@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Upload Routes
  *
  * Handles media upload endpoints:
@@ -64,7 +64,7 @@ router.post('/image', upload.single('file'), async (req: Request, res: Response,
       return res.status(400).json({ error: 'No file provided' });
     }
 
-    const type = (req.body.type as 'avatar' | 'banner' | 'post' | 'message') || 'post';
+    const type = (req.body.type as 'AVATAR' | 'BANNER' | 'POST' | 'MESSAGE') || 'POST';
     const metadata = req.body.metadata ? JSON.parse(req.body.metadata) : undefined;
 
     const media = await mediaService.uploadImage({
@@ -103,7 +103,7 @@ router.post('/images', upload.array('files', 10), async (req: Request, res: Resp
       return res.status(400).json({ error: 'No files provided' });
     }
 
-    const type = (req.body.type as 'post' | 'message') || 'post';
+    const type = (req.body.type as 'POST' | 'MESSAGE') || 'POST';
 
     const results = await Promise.all(
       files.map((file) =>
@@ -154,7 +154,7 @@ router.post('/video', upload.single('file'), async (req: Request, res: Response,
         mimetype: file.mimetype,
         size: file.size,
       },
-      type: 'video',
+      type: 'VIDEO',
       metadata,
     });
 
@@ -190,7 +190,7 @@ router.post('/avatar', upload.single('file'), async (req: Request, res: Response
         mimetype: file.mimetype,
         size: file.size,
       },
-      type: 'avatar',
+      type: 'AVATAR',
     });
 
     logger.info('Avatar uploaded', { mediaId: media.id, userId });
@@ -225,7 +225,7 @@ router.post('/banner', upload.single('file'), async (req: Request, res: Response
         mimetype: file.mimetype,
         size: file.size,
       },
-      type: 'banner',
+      type: 'BANNER',
     });
 
     logger.info('Banner uploaded', { mediaId: media.id, userId });
@@ -280,7 +280,7 @@ router.post('/confirm/:uploadId', async (req: Request, res: Response, next: Next
     const { uploadId } = req.params;
     const { type } = req.body;
 
-    const media = await mediaService.confirmUpload(uploadId, type || 'post');
+    const media = await mediaService.confirmUpload(uploadId, type || 'POST');
 
     res.json({ media });
   } catch (error) {
@@ -289,3 +289,4 @@ router.post('/confirm/:uploadId', async (req: Request, res: Response, next: Next
 });
 
 export default router;
+

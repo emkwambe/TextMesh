@@ -10,7 +10,7 @@ import { PrismaClient } from '@prisma/client';
 
 export interface TrendingPost {
   postId: string;
-  authorId: string;
+  userId: string;
   content: string;
   score: number;
   velocity: number;
@@ -36,7 +36,7 @@ export interface TrendingTopic {
 
 interface TrendingMetrics {
   likes: number;
-  comments: number;
+  replies: number;
   reposts: number;
   views: number;
   velocityScore: number;
@@ -125,7 +125,7 @@ export class TrendingEngine {
           _count: {
             select: {
               likes: true,
-              comments: true,
+              replies: true,
               reposts: true,
             },
           },
@@ -138,7 +138,7 @@ export class TrendingEngine {
       const scoredPosts = posts.map((post) => {
         const metrics: TrendingMetrics = {
           likes: post._count.likes,
-          comments: post._count.comments,
+          replies: post._count.replies,
           reposts: post._count.reposts,
           views: 0, // Would come from analytics
           velocityScore: 0,
@@ -158,7 +158,7 @@ export class TrendingEngine {
 
         return {
           postId: post.id,
-          authorId: post.authorId,
+          userId: post.userId,
           content: post.content,
           score,
           velocity: metrics.velocityScore,
@@ -296,7 +296,7 @@ export class TrendingEngine {
     // Weighted engagement
     const engagement =
       metrics.likes * 1.0 +
-      metrics.comments * 3.0 +
+      metrics.replies * 3.0 +
       metrics.reposts * 2.0;
 
     if (engagement < 1) return 0;
@@ -325,7 +325,7 @@ export class TrendingEngine {
     );
 
     const totalEngagement =
-      metrics.likes + metrics.comments * 2 + metrics.reposts * 1.5;
+      metrics.likes + metrics.replies * 2 + metrics.reposts * 1.5;
 
     return totalEngagement / ageHours;
   }
@@ -335,7 +335,7 @@ export class TrendingEngine {
    */
   private meetsEngagementThreshold(metrics: TrendingMetrics): boolean {
     const totalEngagement =
-      metrics.likes + metrics.comments + metrics.reposts;
+      metrics.likes + metrics.replies + metrics.reposts;
     return totalEngagement >= MIN_ENGAGEMENT_THRESHOLD;
   }
 

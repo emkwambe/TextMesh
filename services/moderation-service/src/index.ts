@@ -84,7 +84,13 @@ async function main() {
       }
 
       const report = await prisma.report.create({
-        data: { reporterId: req.userId, ...data },
+        data: {
+          reporterId: req.userId,
+          targetType: data.targetType,
+          targetId: data.targetId,
+          reason: data.reason,
+          description: data.description,
+        },
       });
 
       await eventBus.publish(EventType.REPORT_CREATED, {

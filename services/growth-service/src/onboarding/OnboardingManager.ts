@@ -113,29 +113,28 @@ export class OnboardingManager {
       return JSON.parse(cached) as OnboardingStatus;
     }
 
-    // Check if user exists
+    // Check if user has already completed onboarding
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { createdAt: true },
+      select: { onboardingCompleted: true, createdAt: true },
     });
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    // TODO: Re-enable when onboardingCompleted field is added to User model
-    // if (user.onboardingCompleted) {
-    //   return {
-    //     userId,
-    //     isComplete: true,
-    //     currentStep: 'complete',
-    //     completedSteps: ONBOARDING_STEPS,
-    //     skippedSteps: [],
-    //     progress: 100,
-    //     startedAt: user.createdAt,
-    //     completedAt: user.createdAt,
-    //   };
-    // }
+    if (user.onboardingCompleted) {
+      return {
+        userId,
+        isComplete: true,
+        currentStep: 'complete',
+        completedSteps: ONBOARDING_STEPS,
+        skippedSteps: [],
+        progress: 100,
+        startedAt: user.createdAt,
+        completedAt: user.createdAt,
+      };
+    }
 
     // Initialize new onboarding status
     const status: OnboardingStatus = {
@@ -407,11 +406,10 @@ export class OnboardingManager {
   }
 
   private async markOnboardingComplete(userId: string): Promise<void> {
-    // TODO: Re-enable when onboardingCompleted field is added to User model
-    // await this.prisma.user.update({
-    //   where: { id: userId },
-    //   data: { onboardingCompleted: true },
-    // });
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompleted: true },
+    });
   }
 
   private async updateNotificationPreferences(
