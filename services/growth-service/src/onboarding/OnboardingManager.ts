@@ -445,6 +445,63 @@ export class OnboardingManager {
       dropOffByStep: {},
     };
   }
+
+  /**
+   * Mark onboarding as complete in UserOnboarding model
+   * Used for new intent-based onboarding flow
+   */
+  async completeOnboarding(userId: string): Promise<void> {
+    // Update User model
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { onboardingCompleted: true },
+    });
+
+    // Update UserOnboarding model if exists
+    const onboarding = await this.prisma.userOnboarding.findUnique({
+      where: { userId },
+    });
+
+    if (onboarding) {
+      await this.prisma.userOnboarding.update({
+        where: { userId },
+        data: {
+          completedAt: new Date(),
+          completedSteps: {
+            push: 'onboarding_complete',
+          },
+        },
+      });
+    }
+  }
+
+  /**
+   * Get onboarding progress for new intent-based flow
+   */
+  async getOnboardingProgress(userId: string): Promise<{
+    completed: boolean;
+    completedAt?: Date;
+    currentStep?: string;
+  }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { onboardingCompleted: true },
+    });
+
+    const onboarding = await this.prisma.userOnboarding.findUnique({
+      where: { userId },
+      select: {
+        completedAt: true,
+        completedSteps: true,
+      },
+    });
+
+    return {
+      completed: user?.onboardingCompleted || false,
+      completedAt: onboarding?.completedAt || undefined,
+      currentStep: onboarding?.completedSteps[onboarding.completedSteps.length - 1] || undefined,
+    };
+  }
 }
 
 export default OnboardingManager;

@@ -19,6 +19,9 @@ import { OnboardingManager } from './onboarding/OnboardingManager';
 import { ProfileWizard } from './onboarding/ProfileWizard';
 import { InterestSelector } from './onboarding/InterestSelector';
 import { FollowSuggestions } from './onboarding/FollowSuggestions';
+import { IntentSelection } from './onboarding/IntentSelection';
+import { GroupSuggestions } from './onboarding/GroupSuggestions';
+import { LeaderSuggestions } from './onboarding/LeaderSuggestions';
 import { ReferralSystem } from './engagement/ReferralSystem';
 import { AchievementSystem } from './engagement/AchievementSystem';
 import { StreakTracker } from './engagement/StreakTracker';
@@ -31,6 +34,9 @@ let onboardingManager: OnboardingManager;
 let profileWizard: ProfileWizard;
 let interestSelector: InterestSelector;
 let followSuggestions: FollowSuggestions;
+let intentSelection: IntentSelection;
+let groupSuggestions: GroupSuggestions;
+let leaderSuggestions: LeaderSuggestions;
 let referralSystem: ReferralSystem;
 let achievementSystem: AchievementSystem;
 let streakTracker: StreakTracker;
@@ -83,6 +89,123 @@ app.post('/api/growth/onboarding/:userId/skip', async (req: Request, res: Respon
   } catch (error) {
     logger.error('Failed to skip onboarding', error);
     res.status(500).json({ success: false, error: 'Failed to skip' });
+  }
+});
+
+// ============ NEW INTENT-BASED ONBOARDING ENDPOINTS ============
+
+// Save user intent
+app.post('/api/growth/onboarding/intent', async (req: Request, res: Response) => {
+  try {
+    const { userId, primaryIntent, secondaryIntent, topics } = req.body;
+
+    if (!userId || !primaryIntent) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId and primaryIntent are required'
+      });
+    }
+
+    const result = await intentSelection.saveIntent(userId, {
+      primaryIntent,
+      secondaryIntent,
+      topics,
+    });
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Failed to save intent', error);
+    res.status(500).json({ success: false, error: 'Failed to save intent' });
+  }
+});
+
+// Get suggested groups
+app.get('/api/growth/onboarding/suggested-groups', async (req: Request, res: Response) => {
+  try {
+    const { userId, limit } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    const result = await groupSuggestions.getSuggestions(
+      userId as string,
+      limit ? parseInt(limit as string, 10) : 10
+    );
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Failed to get group suggestions', error);
+    res.status(500).json({ success: false, error: 'Failed to get suggestions' });
+  }
+});
+
+// Get suggested leaders
+app.get('/api/growth/onboarding/suggested-leaders', async (req: Request, res: Response) => {
+  try {
+    const { userId, limit } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    const result = await leaderSuggestions.getSuggestions(
+      userId as string,
+      limit ? parseInt(limit as string, 10) : 10
+    );
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    logger.error('Failed to get leader suggestions', error);
+    res.status(500).json({ success: false, error: 'Failed to get suggestions' });
+  }
+});
+
+// Complete onboarding
+app.post('/api/growth/onboarding/complete', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    await onboardingManager.completeOnboarding(userId);
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to complete onboarding', error);
+    res.status(500).json({ success: false, error: 'Failed to complete onboarding' });
+  }
+});
+
+// Get onboarding progress
+app.get('/api/growth/onboarding/progress', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    const progress = await onboardingManager.getOnboardingProgress(userId as string);
+
+    res.json({ success: true, data: progress });
+  } catch (error) {
+    logger.error('Failed to get onboarding progress', error);
+    res.status(500).json({ success: false, error: 'Failed to get progress' });
   }
 });
 
@@ -375,6 +498,9 @@ async function main() {
     interestSelector = new InterestSelector(redis);
     followSuggestions = new FollowSuggestions(redis, prisma);
     profileWizard = new ProfileWizard(prisma);
+    intentSelection = new IntentSelection(prisma, redis);
+    groupSuggestions = new GroupSuggestions(prisma, redis);
+    leaderSuggestions = new LeaderSuggestions(prisma, redis);
     referralSystem = new ReferralSystem(redis, prisma);
     achievementSystem = new AchievementSystem(redis, prisma);
     streakTracker = new StreakTracker(redis, prisma);
