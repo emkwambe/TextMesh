@@ -20,13 +20,13 @@
     "prisma"
   ],
   "dependencies": {
-    "@prisma/client": "^5.7.0",
+    "@prisma/client": "^7.2.0",
     "@textmesh/logger": "workspace:*",
     "ioredis": "^5.3.2"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
-    "prisma": "^5.7.0",
+    "prisma": "^7.2.0",
     "typescript": "^5.3.0"
   }
 }
