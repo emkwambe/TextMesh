@@ -23,6 +23,9 @@ interface CreatePostInput {
   groupId?: string;
   parentId?: string;
   repostId?: string;
+  style?: string;
+  emphasis?: string;
+  template?: string;
 }
 
 export class PostService {
@@ -83,6 +86,9 @@ export class PostService {
         groupId: input.groupId,
         parentId: input.parentId,
         repostId: input.repostId,
+        style: input.style as any,
+        emphasis: input.emphasis as any,
+        template: input.template,
       },
       include: {
         user: {

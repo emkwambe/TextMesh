@@ -7,6 +7,9 @@ import { createLogger } from '@textmesh/logger';
 import { getPrismaClient, disconnectPrisma, getRedisClient, disconnectRedis } from '@textmesh/db-client';
 import { createEventBus } from '@textmesh/event-bus';
 import { postRoutes } from './routes/post.routes.js';
+import { templateRoutes } from './routes/template.routes.js';
+import { previewRoutes } from './routes/preview.routes.js';
+import { TemplateManager } from './templates/TemplateManager.js';
 import { errorHandler } from './middleware/error-handler.js';
 
 const PORT = parseInt(process.env['POST_SERVICE_PORT'] || '3003', 10);
@@ -38,6 +41,11 @@ async function main() {
     await eventBus.connectProducer();
     logger.info('Connected to Kafka');
 
+    // Seed system templates
+    const templateManager = new TemplateManager(prisma, logger);
+    await templateManager.seedTemplates();
+    logger.info('System templates seeded');
+
     const app = express();
     app.use(express.json());
 
@@ -49,6 +57,8 @@ async function main() {
 
     app.get('/health', (_req, res) => res.json({ status: 'healthy', service: 'post-service' }));
     app.use('/', postRoutes(prisma, redis, eventBus, logger));
+    app.use('/templates', templateRoutes(prisma, logger));
+    app.use('/preview', previewRoutes(prisma, logger));
     app.use(errorHandler);
 
     const server = app.listen(PORT, HOST, () => {
