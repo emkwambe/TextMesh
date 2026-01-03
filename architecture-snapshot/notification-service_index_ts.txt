@@ -7,9 +7,6 @@ import { createLogger } from '@textmesh/logger';
 import { getPrismaClient, disconnectPrisma, getRedisClient, disconnectRedis, CacheManager, CacheKeys } from '@textmesh/db-client';
 import { createEventBus, EventType, EVENT_TOPICS } from '@textmesh/event-bus';
 import { NotificationType } from '@textmesh/shared-types';
-import { preferenceRoutes } from './routes/preference.routes.js';
-import { NotificationPreferenceService } from './services/notification-preference.service.js';
-import { DigestJob } from './jobs/digest.job.js';
 
 const PORT = parseInt(process.env['NOTIFICATION_SERVICE_PORT'] || '3006', 10);
 const logger = createLogger({ service: 'notification-service', level: 'info' });
@@ -20,13 +17,6 @@ async function main() {
   const redis = getRedisClient();
   await redis.ping();
   const cache = new CacheManager(redis, 60);
-
-  // Initialize notification preference service
-  const preferenceService = new NotificationPreferenceService(prisma, logger);
-
-  // Initialize and start digest job
-  const digestJob = new DigestJob(prisma, logger);
-  digestJob.start();
 
   const eventBus = createEventBus(
     { brokers: (process.env['KAFKA_BROKERS'] || 'localhost:9092').split(','), clientId: 'notification-service', groupId: 'notification-service-group' },
@@ -43,7 +33,7 @@ async function main() {
     const follower = await prisma.user.findUnique({ where: { id: payload.followerId }, select: { username: true, displayName: true, avatarUrl: true } });
     if (!follower) return;
 
-    await createNotification(prisma, preferenceService, payload.followeeId, 'NEW_FOLLOWER', {
+    await createNotification(prisma, payload.followeeId, 'NEW_FOLLOWER', {
       type: 'new_follower',
       followerId: payload.followerId,
       followerUsername: follower.username,
@@ -55,16 +45,16 @@ async function main() {
 
   // Handle post like events
   eventBus.on(EventType.POST_LIKED, async (event) => {
-    const payload = event.payload as { postId: string; userId: string; postAuthorId: string; groupId?: string };
+    const payload = event.payload as { postId: string; userId: string; postAuthorId: string };
     if (payload.userId === payload.postAuthorId) return; // Don't notify self
 
     const [liker, post] = await Promise.all([
       prisma.user.findUnique({ where: { id: payload.userId }, select: { username: true, displayName: true, avatarUrl: true } }),
-      prisma.post.findUnique({ where: { id: payload.postId }, select: { content: true, groupId: true } }),
+      prisma.post.findUnique({ where: { id: payload.postId }, select: { content: true } }),
     ]);
     if (!liker || !post) return;
 
-    await createNotification(prisma, preferenceService, payload.postAuthorId, 'POST_LIKE', {
+    await createNotification(prisma, payload.postAuthorId, 'POST_LIKE', {
       type: 'post_like',
       postId: payload.postId,
       postContent: post.content.substring(0, 100),
@@ -72,7 +62,7 @@ async function main() {
       likerUsername: liker.username,
       likerDisplayName: liker.displayName,
       likerAvatarUrl: liker.avatarUrl,
-    }, post.groupId || undefined);
+    });
     await cache.delete(CacheKeys.notificationCount(payload.postAuthorId));
   });
 
@@ -83,11 +73,11 @@ async function main() {
 
     const [replier, post] = await Promise.all([
       prisma.user.findUnique({ where: { id: payload.userId }, select: { username: true, displayName: true, avatarUrl: true } }),
-      prisma.post.findUnique({ where: { id: payload.postId }, select: { content: true, groupId: true } }),
+      prisma.post.findUnique({ where: { id: payload.postId }, select: { content: true } }),
     ]);
     if (!replier || !post) return;
 
-    await createNotification(prisma, preferenceService, payload.postAuthorId, 'POST_REPLY', {
+    await createNotification(prisma, payload.postAuthorId, 'POST_REPLY', {
       type: 'post_reply',
       postId: payload.postId,
       postContent: post.content.substring(0, 100),
@@ -97,7 +87,7 @@ async function main() {
       replierUsername: replier.username,
       replierDisplayName: replier.displayName,
       replierAvatarUrl: replier.avatarUrl,
-    }, post.groupId || undefined);
+    });
     await cache.delete(CacheKeys.notificationCount(payload.postAuthorId));
   });
 
@@ -108,7 +98,7 @@ async function main() {
     const group = await prisma.group.findUnique({ where: { id: payload.groupId }, select: { slug: true } });
     if (!inviter || !group) return;
 
-    await createNotification(prisma, preferenceService, payload.inviteeId, 'GROUP_INVITE', {
+    await createNotification(prisma, payload.inviteeId, 'GROUP_INVITE', {
       type: 'group_invite',
       groupId: payload.groupId,
       groupName: payload.groupName,
@@ -116,7 +106,7 @@ async function main() {
       inviterId: payload.inviterId,
       inviterUsername: inviter.username,
       inviterDisplayName: inviter.displayName,
-    }, payload.groupId);
+    });
     await cache.delete(CacheKeys.notificationCount(payload.inviteeId));
   });
 
@@ -132,9 +122,6 @@ async function main() {
   });
 
   app.get('/health', (_req, res) => res.json({ status: 'healthy', service: 'notification-service' }));
-
-  // Mount preference routes
-  app.use('/preferences', preferenceRoutes(prisma, logger));
 
   // Get notifications
   app.get('/', async (req: Request, res: Response) => {
@@ -213,43 +200,14 @@ async function main() {
   });
 
   const server = app.listen(PORT, '0.0.0.0', () => logger.info(`Notification service running on port ${PORT}`));
-  const shutdown = async () => {
-    server.close(async () => {
-      digestJob.stop();
-      await eventBus.shutdown();
-      await disconnectPrisma();
-      await disconnectRedis();
-      process.exit(0);
-    });
-  };
+  const shutdown = async () => { server.close(async () => { await eventBus.shutdown(); await disconnectPrisma(); await disconnectRedis(); process.exit(0); }); };
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
 }
 
-async function createNotification(
-  prisma: any,
-  preferenceService: NotificationPreferenceService,
-  userId: string,
-  type: string,
-  payload: any,
-  groupId?: string
-) {
-  // Always create the notification in database
+async function createNotification(prisma: any, userId: string, type: string, payload: any) {
   await prisma.notification.create({ data: { userId, type, payload } });
-
-  // Check if we should send immediate push notification
-  const shouldSendImmediate = await preferenceService.shouldSendImmediateNotification(
-    userId,
-    groupId
-  );
-
-  if (shouldSendImmediate) {
-    // TODO: Send push notification via APNs/FCM
-    logger.debug('Would send immediate push notification', { userId, type, groupId });
-  } else {
-    // Notification will be sent in digest
-    logger.debug('Notification will be sent in digest', { userId, type, groupId });
-  }
+  // TODO: Send push notification via APNs/FCM
 }
 
 declare global { namespace Express { interface Request { requestId: string; userId?: string; } } }

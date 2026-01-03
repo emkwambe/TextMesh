@@ -15,7 +15,13 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push)",
-      "Bash(Select-String -Pattern \"\\(error TS|Failed:|ERROR|Tasks:\\)\" -Context 0,1)"
+      "Bash(Select-String -Pattern \"\\(error TS|Failed:|ERROR|Tasks:\\)\" -Context 0,1)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(pnpm run dev:*)",
+      "Bash(gh pr create:*)",
+      "Bash(tasklist:*)"
     ]
   }
 }

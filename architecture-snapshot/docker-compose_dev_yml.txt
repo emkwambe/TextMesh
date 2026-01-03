@@ -1,0 +1,213 @@
+# =================================
+# TEXTMESH DOCKER COMPOSE - DEVELOPMENT
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# =================================
+
+version: '3.8'
+
+services:
+  # =================================
+  # INFRASTRUCTURE SERVICES (DEV OVERRIDES)
+  # =================================
+
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: textmesh_dev_password
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  kafka:
+    ports:
+      - "29092:29092"
+
+  elasticsearch:
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+
+  # =================================
+  # APPLICATION SERVICES (DEV OVERRIDES)
+  # Mount source code for hot reload
+  # =================================
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+      target: builder
+    command: pnpm --filter @textmesh/api-gateway dev
+    volumes:
+      - ./services/api-gateway/src:/app/services/api-gateway/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+      target: builder
+    command: pnpm --filter @textmesh/auth-service dev
+    volumes:
+      - ./services/auth-service/src:/app/services/auth-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+      target: builder
+    command: pnpm --filter @textmesh/user-service dev
+    volumes:
+      - ./services/user-service/src:/app/services/user-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  post-service:
+    build:
+      context: .
+      dockerfile: services/post-service/Dockerfile
+      target: builder
+    command: pnpm --filter @textmesh/post-service dev
+    volumes:
+      - ./services/post-service/src:/app/services/post-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  feed-service:
+    build:
+      context: .
+      dockerfile: services/feed-service/Dockerfile
+      target: builder
+    command: pnpm --filter @textmesh/feed-service dev
+    volumes:
+      - ./services/feed-service/src:/app/services/feed-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  group-service:
+    build:
+      context: .
+      dockerfile: services/group-service/Dockerfile
+      target: builder
+    command: pnpm --filter @textmesh/group-service dev
+    volumes:
+      - ./services/group-service/src:/app/services/group-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+      target: builder
+    command: pnpm --filter @textmesh/notification-service dev
+    volumes:
+      - ./services/notification-service/src:/app/services/notification-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  moderation-service:
+    build:
+      context: .
+      dockerfile: services/moderation-service/Dockerfile
+      target: builder
+    command: pnpm --filter @textmesh/moderation-service dev
+    volumes:
+      - ./services/moderation-service/src:/app/services/moderation-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  search-service:
+    build:
+      context: .
+      dockerfile: services/search-service/Dockerfile
+      target: builder
+    command: pnpm --filter @textmesh/search-service dev
+    volumes:
+      - ./services/search-service/src:/app/services/search-service/src
+      - ./packages:/app/packages
+    environment:
+      NODE_ENV: development
+      LOG_LEVEL: debug
+
+  # Disable nginx in development
+  nginx:
+    profiles:
+      - production
+
+  # =================================
+  # DEVELOPMENT TOOLS
+  # =================================
+
+  # Kafka UI for debugging
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: textmesh-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: textmesh
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - textmesh-network
+
+  # Redis Commander for debugging
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: textmesh-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - textmesh-network
+
+  # Adminer for database management
+  adminer:
+    image: adminer:latest
+    container_name: textmesh-adminer
+    ports:
+      - "8082:8080"
+    depends_on:
+      - postgres
+    networks:
+      - textmesh-network
+
+  # Elasticsearch Head for debugging
+  elasticsearch-head:
+    image: mobz/elasticsearch-head:5
+    container_name: textmesh-elasticsearch-head
+    ports:
+      - "9100:9100"
+    depends_on:
+      - elasticsearch
+    networks:
+      - textmesh-network

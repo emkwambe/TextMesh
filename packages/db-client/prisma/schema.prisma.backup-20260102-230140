@@ -1,4 +1,4 @@
-// =================================
+﻿// =================================
 // TEXTMESH DATABASE SCHEMA
 // =================================
 
@@ -15,6 +15,52 @@ datasource db {
 // USER MODELS
 // =================================
 
+
+// ============================================================================
+// ADDED BY AUTO-PATCHER - New Enums for Trust & Safety
+// ============================================================================
+
+enum AppealStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  ESCALATED
+}
+
+enum ViolationType {
+  SPAM
+  HARASSMENT
+  HATE_SPEECH
+  VIOLENCE
+  MISINFORMATION
+  NUDITY
+  SELF_HARM
+  IMPERSONATION
+  COPYRIGHT
+  COMMUNITY_GUIDELINES
+  OTHER
+}
+
+enum ViolationSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum WarningStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  EXPIRED
+  APPEALED
+}
+
+enum ShadowBanStatus {
+  ACTIVE
+  LIFTED
+  EXPIRED
+}
 model User {
   id              String    @id @default(uuid()) @db.Uuid
   username        String    @unique @db.VarChar(30)
@@ -27,20 +73,17 @@ model User {
   authProvider    AuthProvider @default(EMAIL)
   status          AccountStatus @default(ACTIVE)
   role            UserRole @default(USER)
-  followerCount        Int       @default(0)
-  followingCount       Int       @default(0)
-  postCount            Int       @default(0)
-  isVerified           Boolean   @default(false)
-  isPrivate            Boolean   @default(false)
-  onboardingCompleted  Boolean   @default(false)
-  isBanned             Boolean   @default(false)
-  banReason            String?   @db.VarChar(500)
-  dateOfBirth          DateTime? @db.Date
-  location             String?   @db.VarChar(100)
-  website              String?   @db.VarChar(200)
-  lastActiveAt         DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  followerCount   Int       @default(0)
+  followingCount  Int       @default(0)
+  postCount       Int       @default(0)
+  isVerified      Boolean   @default(false)
+  isPrivate       Boolean   @default(false)
+  dateOfBirth     DateTime? @db.Date
+  location        String?   @db.VarChar(100)
+  website         String?   @db.VarChar(200)
+  lastActiveAt    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   // Relations
   posts           Post[]
@@ -63,8 +106,6 @@ model User {
   reportsResolved Report[]      @relation("ReportsResolved")
   sessions        Session[]
   settings        UserSettings?
-  onboarding      UserOnboarding?
-  notificationPreferences NotificationPreference[]
   pushTokens      PushToken[]
   media           Media[]
   moderationLogs  ModerationLog[]
@@ -72,14 +113,35 @@ model User {
   dataExports     DataExport[]
   conversationParticipations ConversationParticipant[]
   sentMessages    Message[]
-  messageReadReceipts MessageReadReceipt[]
-  messageReactions MessageReaction[]
 
   @@index([username])
   @@index([email])
   @@index([phone])
   @@index([status])
-  @@index([createdAt])
+  
+  // ADDED BY AUTO-PATCHER
+  onboardingCompleted Boolean @default(false)
+  isBanned            Boolean @default(false)
+
+  // New relations for engagement
+  likesGiven          Like[]              @relation("UserLikes")
+  commentsWritten     Comment[]           @relation("UserComments")
+  repostsCreated      Repost[]            @relation("UserReposts")
+  
+  // New relations for messaging
+  messageReadReceipts MessageReadReceipt[] @relation("UserReadReceipts")
+  messageReactions    MessageReaction[]   @relation("UserMessageReactions")
+  
+  // New relations for trust & safety
+  appeals             Appeal[]            @relation("UserAppeals")
+  reviewedAppeals     Appeal[]            @relation("ReviewerAppeals")
+  shadowBansReceived  ShadowBan[]         @relation("UserShadowBans")
+  shadowBansIssued    ShadowBan[]         @relation("IssuedShadowBans")
+  violations          Violation[]         @relation("UserViolations")
+  reviewedViolations  Violation[]         @relation("ReviewerViolations")
+  warningsReceived    Warning[]           @relation("UserWarnings")
+  warningsIssued      Warning[]           @relation("IssuedWarnings")
+@@index([createdAt])
 }
 
 model UserSettings {
@@ -102,23 +164,6 @@ model UserSettings {
   updatedAt           DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model UserOnboarding {
-  id              String       @id @default(uuid()) @db.Uuid
-  userId          String       @unique @db.Uuid
-  primaryIntent   UserIntent
-  secondaryIntent UserIntent?
-  topics          String[]
-  completedSteps  String[]
-  completedAt     DateTime?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([primaryIntent])
 }
 
 model UserBlock {
@@ -157,9 +202,6 @@ model Post {
   groupId     String?        @db.Uuid
   parentId    String?        @db.Uuid
   repostId    String?        @db.Uuid
-  style       PostStyle      @default(DEFAULT)
-  emphasis    PostEmphasis   @default(NONE)
-  template    String?        @db.Uuid
   likeCount   Int            @default(0)
   replyCount  Int            @default(0)
   repostCount Int            @default(0)
@@ -168,8 +210,6 @@ model Post {
   editedAt    DateTime?
   isDeleted   Boolean        @default(false)
   deletedAt   DateTime?
-  isHidden    Boolean        @default(false)
-  moderationStatus String?    @db.VarChar(50)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -295,8 +335,6 @@ model Group {
   name          String       @db.VarChar(100)
   slug          String       @unique @db.VarChar(100)
   description   String?      @db.VarChar(500)
-  purpose       String       @db.Text
-  groupType     GroupType    @default(OTHER)
   privacy       GroupPrivacy @default(PUBLIC)
   ownerId       String       @db.Uuid
   avatarUrl     String?      @db.VarChar(500)
@@ -314,7 +352,6 @@ model Group {
   invites     GroupInvite[]
   posts       Post[]
   reports     Report[]
-  notificationPreferences NotificationPreference[]
 
   @@index([slug])
   @@index([ownerId])
@@ -466,79 +503,6 @@ model ContentFilter {
   @@index([isActive])
 }
 
-model Violation {
-  id          String         @id @default(uuid()) @db.Uuid
-  userId      String         @db.Uuid
-  type        ViolationType
-  severity    ViolationSeverity
-  description String?        @db.Text
-  metadata    Json?
-  createdAt   DateTime       @default(now())
-
-  @@index([userId])
-  @@index([type])
-  @@index([createdAt])
-}
-
-model Warning {
-  id            String   @id @default(uuid()) @db.Uuid
-  userId        String   @db.Uuid
-  reason        String   @db.VarChar(500)
-  issuedBy      String   @db.Uuid
-  acknowledged  Boolean  @default(false)
-  expiresAt     DateTime?
-  createdAt     DateTime @default(now())
-
-  @@index([userId])
-  @@index([issuedBy])
-}
-
-model ShadowBan {
-  id          String         @id @default(uuid()) @db.Uuid
-  userId      String         @db.Uuid
-  type        String         @db.VarChar(50)
-  scope       String         @db.VarChar(100)
-  reason      String         @db.VarChar(500)
-  severity    String         @db.VarChar(50)
-  level       ShadowBanLevel @default(PARTIAL)
-  issuedBy    String         @db.Uuid
-  expiresAt   DateTime?
-  createdAt   DateTime       @default(now())
-  revokedAt   DateTime?
-
-  @@index([userId])
-  @@index([issuedBy])
-  @@index([expiresAt])
-}
-
-model Appeal {
-  id              String       @id @default(uuid()) @db.Uuid
-  userId          String       @db.Uuid
-  type            String       @db.VarChar(50)
-  targetId        String       @db.Uuid
-  actionId        String       @db.Uuid
-  actionType      String       @db.VarChar(50)
-  reason          String       @db.Text
-  evidence        String?      @db.Text
-  attachments     Json?
-  status          AppealStatus @default(PENDING)
-  decision        String?      @db.VarChar(50)
-  decisionReason  String?      @db.Text
-  reviewedBy      String?      @db.Uuid
-  resolution      String?      @db.Text
-  escalatedAt     DateTime?
-  escalatedTo     String?      @db.VarChar(100)
-  metadata        Json?
-  submittedAt     DateTime     @default(now())
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  reviewedAt      DateTime?
-
-  @@index([userId])
-  @@index([status])
-  @@index([actionId])
-}
-
 // =================================
 // SESSION/AUTH MODELS
 // =================================
@@ -610,23 +574,16 @@ model LoginAttempt {
 // =================================
 
 model Media {
-  id               String      @id @default(uuid()) @db.Uuid
-  postId           String?     @db.Uuid
-  userId           String      @db.Uuid
-  type             MediaType
-  url              String?     @db.VarChar(500)
-  thumbnailUrl     String?     @db.VarChar(500)
-  mimeType         String?     @db.VarChar(100)
-  size             BigInt?
-  width            Int?
-  height           Int?
-  duration         Int?
-  originalFilename String?     @db.VarChar(255)
-  variants         Json?
-  metadata         Json
-  status           MediaStatus @default(UPLOADING)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  id           String      @id @default(uuid()) @db.Uuid
+  postId       String?     @db.Uuid
+  userId       String      @db.Uuid
+  type         MediaType
+  url          String      @db.VarChar(500)
+  thumbnailUrl String?     @db.VarChar(500)
+  metadata     Json
+  status       MediaStatus @default(UPLOADING)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   post Post? @relation(fields: [postId], references: [id], onDelete: SetNull)
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -641,24 +598,16 @@ model Media {
 // =================================
 
 model AuditLog {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String?  @db.Uuid
-  category    String?  @db.VarChar(50)
-  action      String   @db.VarChar(50)
-  actorId     String?  @db.VarChar(100)
-  actorType   String?  @db.VarChar(50)
-  targetId    String?  @db.VarChar(100)
-  targetType  String?  @db.VarChar(50)
-  resource    String   @db.VarChar(50)
-  resourceId  String?  @db.Uuid
-  details     Json?
-  outcome     String?  @db.VarChar(50)
-  metadata    Json?
-  ipAddress   String?  @db.VarChar(45)
-  userAgent   String?  @db.VarChar(500)
-  sessionId   String?  @db.VarChar(100)
-  requestId   String?  @db.VarChar(100)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String?  @db.Uuid
+  action    String   @db.VarChar(50)
+  resource  String   @db.VarChar(50)
+  resourceId String? @db.Uuid
+  timestamp DateTime @default(now())
+  metadata  Json?
+  ipAddress String?  @db.VarChar(45)
+  userAgent String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -708,13 +657,6 @@ enum UserRole {
   ADMIN
 }
 
-enum UserIntent {
-  LEARNING
-  TEACHING
-  COORDINATING
-  FOLLOWING_UPDATES
-}
-
 enum PostVisibility {
   PUBLIC
   FOLLOWERS
@@ -731,14 +673,6 @@ enum GroupRole {
   OWNER
   ADMIN
   MEMBER
-}
-
-enum GroupType {
-  STUDY
-  JOURNEY
-  UPDATES
-  COMMUNITY
-  OTHER
 }
 
 enum MembershipStatus {
@@ -784,7 +718,6 @@ enum ReportReason {
   HATE_SPEECH
   VIOLENCE
   MISINFORMATION
-  MISLEADING_LACKS_CONTEXT
   NUDITY
   SELF_HARM
   IMPERSONATION
@@ -802,10 +735,6 @@ enum ReportStatus {
 enum MediaType {
   IMAGE
   VIDEO
-  AVATAR
-  BANNER
-  POST
-  MESSAGE
 }
 
 enum MediaStatus {
@@ -869,31 +798,6 @@ enum DataExportStatus {
   FAILED
 }
 
-enum PostStyle {
-  DEFAULT
-  ANNOUNCEMENT
-  QUESTION
-  UPDATE
-  DISCUSSION
-}
-
-enum NotificationFrequency {
-  IMMEDIATE
-  DAILY_DIGEST
-  WEEKLY_DIGEST
-  DISABLED
-}
-
-enum PostEmphasis {
-  NONE
-  HIGHLIGHT_YELLOW
-  HIGHLIGHT_BLUE
-  HIGHLIGHT_GREEN
-  COLOR_RED
-  COLOR_BLUE
-  COLOR_GREEN
-}
-
 // =================================
 // CONVERSATIONS (for realtime messaging)
 // =================================
@@ -901,28 +805,26 @@ model Conversation {
   id           String                    @id @default(uuid()) @db.Uuid
   type         ConversationType          @default(DIRECT)
   name         String?                   @db.VarChar(100)
-  creatorId    String?                   @db.Uuid
   createdAt    DateTime                  @default(now())
   updatedAt    DateTime                  @updatedAt
-
+  
   participants ConversationParticipant[]
   messages     Message[]
-
+  
   @@index([createdAt])
-  @@index([creatorId])
 }
 
 model ConversationParticipant {
-  conversationId String    @db.Uuid
-  userId         String    @db.Uuid
-  joinedAt       DateTime  @default(now())
-  lastReadAt     DateTime  @default(now())
-  leftAt         DateTime?
-  deletedAt      DateTime?
-
+  conversationId String   @db.Uuid
+  userId         String   @db.Uuid
+  joinedAt       DateTime @default(now())
+  lastReadAt     DateTime @default(now())
+  leftAt    DateTime?
+  deletedAt DateTime?
+  
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
   @@id([conversationId, userId])
   @@index([userId])
 }
@@ -932,51 +834,24 @@ model Message {
   conversationId String      @db.Uuid
   senderId       String      @db.Uuid
   content        String      @db.Text
-  replyToId      String?     @db.Uuid
-  attachments    Json?
-  isDeleted      Boolean     @default(false)
-  deletedAt      DateTime?
-  isEdited       Boolean     @default(false)
-  editedAt       DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+  
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  // ADDED BY AUTO-PATCHER
+  replyToId    String?
+  replyTo      Message?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      Message[] @relation("MessageReplies")
+  isDeleted    Boolean   @default(false)
+  isEdited     Boolean   @default(false)
+  
+  readReceipts MessageReadReceipt[] @relation("MessageReadReceipts")
+  reactions    MessageReaction[]    @relation("MessageReactions")
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  replyTo        Message?     @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies        Message[]    @relation("MessageReplies")
-  readBy         MessageReadReceipt[]
-  reactions      MessageReaction[]
-
+  
   @@index([conversationId, createdAt])
   @@index([senderId])
-  @@index([replyToId])
-}
-
-model MessageReadReceipt {
-  messageId String   @db.Uuid
-  userId    String   @db.Uuid
-  readAt    DateTime @default(now())
-
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([messageId, userId])
-  @@index([userId])
-}
-
-model MessageReaction {
-  messageId String   @db.Uuid
-  userId    String   @db.Uuid
-  emoji     String   @db.VarChar(10)
-  createdAt DateTime @default(now())
-
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([messageId, userId, emoji])
-  @@unique([messageId, userId, emoji], name: "messageId_userId_emoji")
-  @@index([messageId])
 }
 
 enum ConversationType {
@@ -984,84 +859,198 @@ enum ConversationType {
   GROUP
 }
 
-enum ViolationType {
-  SPAM
-  HARASSMENT
-  HATE_SPEECH
-  VIOLENCE
-  MISINFORMATION
-  NUDITY
-  SELF_HARM
-  IMPERSONATION
-  COPYRIGHT
-  OTHER
-}
+// ============================================================================
+// ADDED BY AUTO-PATCHER - Engagement Models
+// ============================================================================
 
-enum ViolationSeverity {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
 
-enum ShadowBanLevel {
-  PARTIAL
-  FULL
-}
+  user User @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation("PostLikesNew", fields: [postId], references: [id], onDelete: Cascade)
 
-enum AppealStatus {
-  PENDING
-  UNDER_REVIEW
-  APPROVED
-  REJECTED
-  RESOLVED
-  WITHDRAWN
-  ESCALATED
-}
-
-// =================================
-// SPRINT 3: EXPRESSION & POLISH
-// =================================
-
-model PostTemplate {
-  id          String     @id @default(uuid()) @db.Uuid
-  name        String     @db.VarChar(100)
-  style       PostStyle
-  placeholder String     @db.VarChar(200)
-  structure   Json       // Template structure
-  isSystem    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-
-  @@index([style])
-}
-
-model NotificationPreference {
-  id             String                 @id @default(uuid()) @db.Uuid
-  userId         String                 @db.Uuid
-  groupId        String?                @db.Uuid
-  frequency      NotificationFrequency  @default(IMMEDIATE)
-  mutedUntil     DateTime?
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-
-  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group          Group?                 @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, groupId])
+  @@unique([userId, postId])
+  @@index([postId])
   @@index([userId])
-  @@index([groupId])
+  @@index([createdAt])
+  @@map("likes")
 }
 
-model AnalyticsEvent {
-  id          String   @id @default(uuid()) @db.Uuid
-  eventType   String   @db.VarChar(50)
-  userId      String?  @db.Uuid
-  groupId     String?  @db.Uuid
-  postId      String?  @db.Uuid
-  metadata    Json?
-  timestamp   DateTime @default(now())
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  userId    String
+  postId    String
+  parentId  String?
+  isEdited  Boolean  @default(false)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([eventType, timestamp])
-  @@index([userId, timestamp])
-  @@index([groupId, timestamp])
+  user    User      @relation("UserComments", fields: [userId], references: [id], onDelete: Cascade)
+  post    Post      @relation("PostComments", fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([createdAt])
+  @@map("comments")
+}
+
+model Repost {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  quote     String?  @db.Text
+  createdAt DateTime @default(now())
+
+  user User @relation("UserReposts", fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation("PostReposts", fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("reposts")
+}
+
+// ============================================================================
+// ADDED BY AUTO-PATCHER - Messaging Models
+// ============================================================================
+
+model MessageReadReceipt {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  readAt    DateTime @default(now())
+
+  message Message @relation("MessageReadReceipts", fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation("UserReadReceipts", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_read_receipts")
+}
+
+model MessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message Message @relation("MessageReactions", fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation("UserMessageReactions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@index([userId])
+  @@map("message_reactions")
+}
+
+// ============================================================================
+// ADDED BY AUTO-PATCHER - Trust & Safety Models
+// ============================================================================
+
+model Appeal {
+  id             String       @id @default(cuid())
+  userId         String
+  targetType     String
+  targetId       String
+  reason         String       @db.Text
+  evidence       String?      @db.Text
+  status         AppealStatus @default(PENDING)
+  reviewerId     String?
+  reviewNotes    String?      @db.Text
+  originalAction String
+  resolution     String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  resolvedAt     DateTime?
+
+  user     User  @relation("UserAppeals", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("ReviewerAppeals", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("appeals")
+}
+
+model ShadowBan {
+  id         String          @id @default(cuid())
+  userId     String
+  reason     String          @db.Text
+  scope      String          @default("full")
+  status     ShadowBanStatus @default(ACTIVE)
+  issuedBy   String
+  expiresAt  DateTime?
+  liftedAt   DateTime?
+  liftedBy   String?
+  liftReason String?         @db.Text
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  user   User @relation("UserShadowBans", fields: [userId], references: [id], onDelete: Cascade)
+  issuer User @relation("IssuedShadowBans", fields: [issuedBy], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("shadow_bans")
+}
+
+model Violation {
+  id          String            @id @default(cuid())
+  userId      String
+  type        ViolationType
+  severity    ViolationSeverity
+  description String            @db.Text
+  contentId   String?
+  contentType String?
+  evidence    String?           @db.Text
+  detectedBy  String
+  reviewerId  String?
+  actionTaken String?
+  createdAt   DateTime          @default(now())
+  resolvedAt  DateTime?
+
+  user     User      @relation("UserViolations", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User?     @relation("ReviewerViolations", fields: [reviewerId], references: [id], onDelete: SetNull)
+  warnings Warning[] @relation("ViolationWarnings")
+
+  @@index([userId])
+  @@index([type])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("violations")
+}
+
+model Warning {
+  id             String        @id @default(cuid())
+  userId         String
+  violationId    String?
+  type           String
+  message        String        @db.Text
+  status         WarningStatus @default(ACTIVE)
+  issuedBy       String
+  acknowledgedAt DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime      @default(now())
+
+  user      User       @relation("UserWarnings", fields: [userId], references: [id], onDelete: Cascade)
+  issuer    User       @relation("IssuedWarnings", fields: [issuedBy], references: [id], onDelete: Cascade)
+  violation Violation? @relation("ViolationWarnings", fields: [violationId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("warnings")
 }

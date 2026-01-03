@@ -3,7 +3,7 @@
 // =================================
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient, GroupType } from '@prisma/client';
+import { PrismaClient, GroupType, PostStyle, PostEmphasis } from '@prisma/client';
 import Redis from 'ioredis';
 import { EventBus } from '@textmesh/event-bus';
 import { Logger } from '@textmesh/logger';
@@ -20,6 +20,9 @@ const createPostSchema = z.object({
     groupId: z.string().uuid().optional(),
     parentId: z.string().uuid().optional(),
     repostId: z.string().uuid().optional(),
+    style: z.nativeEnum(PostStyle).optional(),
+    emphasis: z.nativeEnum(PostEmphasis).optional(),
+    template: z.string().uuid().optional(),
   }),
 });
 
