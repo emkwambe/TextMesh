@@ -23,6 +23,7 @@ import { GrowthAnalytics } from './metrics/GrowthAnalytics';
 import { RealtimeTracker } from './realtime/RealtimeTracker';
 import { DashboardBuilder } from './dashboards/DashboardBuilder';
 import { ReportGenerator } from './reports/ReportGenerator';
+import { analyticsRoutes } from './routes/analytics.routes.js';
 
 // ============ SERVICE INSTANCES ============
 
@@ -388,6 +389,9 @@ async function main() {
     growthAnalytics = new GrowthAnalytics(redis, prisma);
     dashboardBuilder = new DashboardBuilder(redis, platformMetrics, userAnalytics, contentAnalytics, engagementAnalytics, growthAnalytics);
     reportGenerator = new ReportGenerator(redis, prisma, dashboardBuilder);
+
+    // Mount new analytics routes
+    app.use('/api/analytics/internal', analyticsRoutes(prisma, logger));
 
     app.listen(PORT, () => {
       logger.info(`Analytics service running on port ${PORT}`);
