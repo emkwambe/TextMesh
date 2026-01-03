@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@textmesh/db-client": ["packages/db-client/src"],
+      "@textmesh/event-bus": ["packages/event-bus/src"],
+      "@textmesh/logger": ["packages/logger/src"],
+      "@textmesh/api-client": ["packages/api-client/src"]
+    }
+  },
+  "include": [
+    "packages/*/src/**/*.ts",
+    "services/*/src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    "coverage",
+    "**/*.test.ts",
+    "**/__tests__/**"
+  ]
+}

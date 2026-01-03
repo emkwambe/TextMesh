@@ -117,29 +117,6 @@ async function main() {
     res.json({ success: true, message: 'Feed rebuilt' });
   });
 
-  // Prefetch endpoints (optimized for preloading next page)
-  app.get('/home/prefetch', async (req, res) => {
-    if (!req.userId) return res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED' } });
-    const { cursor, limit } = req.query as { cursor?: string; limit?: string };
-
-    // Set aggressive caching for prefetch
-    res.setHeader('Cache-Control', 'private, max-age=300');
-
-    const feed = await feedService.getHomeFeed(req.userId, cursor, parseInt(limit || '20', 10));
-    res.json({ success: true, data: feed });
-  });
-
-  app.get('/group/:groupId/prefetch', async (req, res) => {
-    if (!req.userId) return res.status(401).json({ success: false, error: { code: 'UNAUTHORIZED' } });
-    const { cursor, limit } = req.query as { cursor?: string; limit?: string };
-
-    // Set aggressive caching for prefetch
-    res.setHeader('Cache-Control', 'private, max-age=300');
-
-    const feed = await feedService.getGroupFeed(req.params['groupId']!, req.userId, cursor, parseInt(limit || '20', 10));
-    res.json({ success: true, data: feed });
-  });
-
   // Initialize fanout event handlers
   await initializeFanoutHandlers();
   logger.info('Fanout handlers initialized');

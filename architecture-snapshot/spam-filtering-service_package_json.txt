@@ -1,0 +1,29 @@
+{
+  "name": "@textmesh/spam-filtering-service",
+  "version": "1.0.0",
+  "description": "Spam filtering service for TextMesh",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node-dev src/index.ts",
+    "test": "jest",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@textmesh/logger": "workspace:*",
+    "@textmesh/content-moderation": "workspace:*",
+    "@textmesh/cache-layer": "workspace:*",
+    "@textmesh/db-client": "workspace:*",
+    "express": "^4.18.2",
+    "kafkajs": "^2.2.4",
+    "ioredis": "^5.3.2",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/uuid": "^9.0.0",
+    "typescript": "^5.0.0"
+  }
+}

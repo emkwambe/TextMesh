@@ -7,9 +7,11 @@ import Redis from 'ioredis';
 import { Logger } from '@textmesh/logger';
 import { PaginatedResponse, PostWithDetails, ErrorCode, AppError } from '@textmesh/shared-types';
 import { CacheManager, CacheKeys } from '@textmesh/db-client';
+import { FeedCache } from '../cache/FeedCache.js';
 
 export class FeedService {
   private cache: CacheManager;
+  private feedCache: FeedCache;
 
   constructor(
     private prisma: PrismaClient,
@@ -17,9 +19,24 @@ export class FeedService {
     private logger: Logger
   ) {
     this.cache = new CacheManager(redis, 60);
+    this.feedCache = new FeedCache(redis, logger);
   }
 
   async getHomeFeed(userId: string, cursor: string | undefined, limit: number): Promise<PaginatedResponse<PostWithDetails>> {
+    // Try cache for first page only (no cursor)
+    if (!cursor && limit === 20) {
+      const cached = await this.feedCache.getHomeFeed(userId);
+      if (cached) {
+        await this.feedCache.recordCacheHit();
+        return {
+          items: cached.slice(0, limit),
+          nextCursor: cached.length > limit ? cached[limit - 1]!.id : null,
+          hasMore: cached.length > limit
+        };
+      }
+      await this.feedCache.recordCacheMiss();
+    }
+
     // Get users the current user follows
     const following = await this.prisma.follow.findMany({
       where: { followerId: userId },
@@ -68,6 +85,11 @@ export class FeedService {
       })
     );
 
+    // Cache first page results
+    if (!cursor && limit === 20) {
+      await this.feedCache.cacheHomeFeed(userId, enrichedItems);
+    }
+
     return {
       items: enrichedItems,
       nextCursor: hasMore && items.length > 0 ? items[items.length - 1]!.id : null,
@@ -76,6 +98,20 @@ export class FeedService {
   }
 
   async getGroupFeed(groupId: string, userId: string, cursor: string | undefined, limit: number): Promise<PaginatedResponse<PostWithDetails>> {
+    // Try cache for first page only (no cursor)
+    if (!cursor && limit === 20) {
+      const cached = await this.feedCache.getGroupFeed(groupId);
+      if (cached) {
+        await this.feedCache.recordCacheHit();
+        return {
+          items: cached.slice(0, limit),
+          nextCursor: cached.length > limit ? cached[limit - 1]!.id : null,
+          hasMore: cached.length > limit
+        };
+      }
+      await this.feedCache.recordCacheMiss();
+    }
+
     // Check membership
     const membership = await this.prisma.groupMembership.findUnique({
       where: { userId_groupId: { userId, groupId } },
@@ -105,8 +141,15 @@ export class FeedService {
     const hasMore = posts.length > limit;
     const items = hasMore ? posts.slice(0, -1) : posts;
 
+    const results = items.map((p) => this.toPostWithDetails(p));
+
+    // Cache first page results
+    if (!cursor && limit === 20) {
+      await this.feedCache.cacheGroupFeed(groupId, results);
+    }
+
     return {
-      items: items.map((p) => this.toPostWithDetails(p)),
+      items: results,
       nextCursor: hasMore && items.length > 0 ? items[items.length - 1]!.id : null,
       hasMore,
     };
@@ -164,6 +207,20 @@ export class FeedService {
   }
 
   async getDiscoverFeed(viewerId: string | undefined, cursor: string | undefined, limit: number): Promise<PaginatedResponse<PostWithDetails>> {
+    // Try cache for first page only (no cursor)
+    if (!cursor && limit === 20) {
+      const cached = await this.feedCache.getTrendingFeed();
+      if (cached) {
+        await this.feedCache.recordCacheHit();
+        return {
+          items: cached.slice(0, limit),
+          nextCursor: cached.length > limit ? cached[limit - 1]!.id : null,
+          hasMore: cached.length > limit
+        };
+      }
+      await this.feedCache.recordCacheMiss();
+    }
+
     // Get trending/popular public posts
     const posts = await this.prisma.post.findMany({
       where: {
@@ -183,8 +240,15 @@ export class FeedService {
     const hasMore = posts.length > limit;
     const items = hasMore ? posts.slice(0, -1) : posts;
 
+    const results = items.map((p) => this.toPostWithDetails(p));
+
+    // Cache first page results
+    if (!cursor && limit === 20) {
+      await this.feedCache.cacheTrendingFeed(results);
+    }
+
     return {
-      items: items.map((p) => this.toPostWithDetails(p)),
+      items: results,
       nextCursor: hasMore && items.length > 0 ? items[items.length - 1]!.id : null,
       hasMore,
     };
@@ -193,8 +257,10 @@ export class FeedService {
   async fanOutPost(payload: { postId: string; userId: string; visibility: string; groupId?: string }): Promise<void> {
     this.logger.info('Fan-out post to feeds', { postId: payload.postId });
 
-    // For a production system, this would add the post to followers' Redis-based feed caches
-    // Simplified implementation - just invalidate caches
+    // Invalidate relevant feed caches
+    await this.feedCache.invalidateOnNewPost(payload.postId, payload.userId, payload.groupId);
+
+    // Also invalidate old cache keys
     if (payload.groupId) {
       await this.cache.delete(CacheKeys.feedGroup('*', payload.groupId));
     }
