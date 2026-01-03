@@ -9,8 +9,8 @@
 | Sprint | Name | Focus | Status |
 |--------|------|-------|--------|
 | Sprint 1 | Foundation | Schema completion, service re-enablement | ✅ Complete |
-| Sprint 2 | Onboarding & Safety | Intent-first onboarding, trust & safety | 🚧 In Progress |
-| Sprint 3 | Expression & Polish | Text styling, feed performance | 📋 Planned |
+| Sprint 2 | Onboarding & Safety | Intent-first onboarding, trust & safety | ✅ Complete |
+| Sprint 3 | Expression & Polish | Text styling, feed performance | ✅ Complete |
 | Sprint 4 | Private Alpha | Launch prep, monitoring, feedback | 📋 Planned |
 | Sprint 5 | Media (Tier 1) | Annotated images | 📋 Backlog |
 | Sprint 6 | Discovery | Improved group/content discovery | 📋 Backlog |

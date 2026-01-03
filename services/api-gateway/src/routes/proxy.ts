@@ -25,10 +25,17 @@ export function createProxyRoutes(service: ServiceName): Router {
   const proxyOptions: Options = {
     target: targetUrl,
     changeOrigin: true,
-    pathRewrite: (path) => {
-      // Remove the service prefix from path
-      // e.g., /api/v1/users/123 -> /123
-      return path;
+    pathRewrite: {
+      // Remove the /api/v1/{service} prefix from path
+      // e.g., /api/v1/auth/signup -> /signup
+      '^/api/v1/auth': '',
+      '^/api/v1/users': '',
+      '^/api/v1/posts': '',
+      '^/api/v1/feed': '',
+      '^/api/v1/groups': '',
+      '^/api/v1/notifications': '',
+      '^/api/v1/reports': '',
+      '^/api/v1/search': '',
     },
     onProxyReq: (proxyReq, req) => {
       // Forward request ID
@@ -42,6 +49,15 @@ export function createProxyRoutes(service: ServiceName): Router {
       if (userId) proxyReq.setHeader('X-User-ID', userId as string);
       if (sessionId) proxyReq.setHeader('X-Session-ID', sessionId as string);
       if (userRole) proxyReq.setHeader('X-User-Role', userRole as string);
+
+      // Re-stream body if it was consumed by express.json()
+      const expressReq = req as Request;
+      if (expressReq.body && Object.keys(expressReq.body).length > 0) {
+        const bodyData = JSON.stringify(expressReq.body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
 
       // Log proxy request
       (req as Request).logger?.debug('Proxying request', {
