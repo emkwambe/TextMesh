@@ -21,7 +21,9 @@
       "Bash(taskkill:*)",
       "Bash(pnpm run dev:*)",
       "Bash(gh pr create:*)",
-      "Bash(tasklist:*)"
+      "Bash(tasklist:*)",
+      "Bash(npx next dev --help:*)",
+      "Bash(curl:*)"
     ]
   }
 }
