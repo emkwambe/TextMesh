@@ -12,7 +12,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@prisma/client": "^5.7.0",
+    "@prisma/client": "^7.2.0",
     "@textmesh/config": "workspace:*",
     "@textmesh/db-client": "workspace:*",
     "@textmesh/event-bus": "workspace:*",
