@@ -6,7 +6,7 @@ import { createApp } from './app.js';
 import { createLogger } from '@textmesh/logger';
 import { getRedisClient, disconnectRedis } from '@textmesh/db-client';
 
-const PORT = parseInt(process.env['API_GATEWAY_PORT'] || '8080', 10);
+const PORT = parseInt(process.env['API_GATEWAY_PORT'] || '3000', 10);
 const HOST = process.env['API_GATEWAY_HOST'] || '0.0.0.0';
 
 const logger = createLogger({
