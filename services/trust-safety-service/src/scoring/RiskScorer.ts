@@ -331,6 +331,41 @@ export class RiskScorer {
       }
     }
 
+    // Check group creation rate (new accounts creating many groups = suspicious)
+    try {
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const groupsCreated = await this.prisma.group.count({
+        where: {
+          ownerId: userId,
+          createdAt: {
+            gte: weekAgo,
+          },
+        },
+      });
+
+      if (groupsCreated > 10) {
+        risk += 25;
+        factors.push({
+          category: 'behavior',
+          name: 'high_group_creation',
+          impact: 25,
+          description: `${groupsCreated} groups created in the last week`,
+          timestamp: new Date(),
+        });
+      } else if (groupsCreated > 5) {
+        risk += 10;
+        factors.push({
+          category: 'behavior',
+          name: 'moderate_group_creation',
+          impact: 10,
+          description: `${groupsCreated} groups created in the last week`,
+          timestamp: new Date(),
+        });
+      }
+    } catch {
+      // Ignore errors in group counting
+    }
+
     return Math.max(0, Math.min(100, risk));
   }
 
@@ -392,6 +427,52 @@ export class RiskScorer {
           timestamp: new Date(),
         });
       }
+    }
+
+    // Check external link frequency (high % of posts with links = potential spam)
+    try {
+      const recentPosts = await this.prisma.post.findMany({
+        where: {
+          userId: userId,
+          createdAt: {
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+          },
+        },
+        select: {
+          content: true,
+        },
+        take: 100,
+      });
+
+      if (recentPosts.length > 5) {
+        const postsWithLinks = recentPosts.filter((post) =>
+          /https?:\/\//.test(post.content)
+        ).length;
+        const linkFrequency = postsWithLinks / recentPosts.length;
+
+        // High link frequency + short content = likely spam
+        if (linkFrequency > 0.7) {
+          risk += 20;
+          factors.push({
+            category: 'content',
+            name: 'high_external_links',
+            impact: 20,
+            description: `${(linkFrequency * 100).toFixed(1)}% of posts contain external links`,
+            timestamp: new Date(),
+          });
+        } else if (linkFrequency > 0.5) {
+          risk += 10;
+          factors.push({
+            category: 'content',
+            name: 'moderate_external_links',
+            impact: 10,
+            description: `${(linkFrequency * 100).toFixed(1)}% of posts contain external links`,
+            timestamp: new Date(),
+          });
+        }
+      }
+    } catch {
+      // Ignore errors in link frequency calculation
     }
 
     return Math.max(0, Math.min(100, risk));
