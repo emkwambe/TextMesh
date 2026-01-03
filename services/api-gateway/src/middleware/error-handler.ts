@@ -25,7 +25,12 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
-  req.logger.error('Request error', err);
+  // Handle case where logger is not attached to request
+  if (req.logger) {
+    req.logger.error('Request error', err);
+  } else {
+    console.error('Request error (no logger):', err);
+  }
 
   const response: ErrorResponse = {
     success: false,
