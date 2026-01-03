@@ -1,12 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  turbopack: {
-    root: "../..",
-  },
   reactStrictMode: true,
   transpilePackages: ['@textmesh/brand-identity', '@textmesh/shared-types'],
   images: {
-    domains: ['cdn.textmesh.com', 'localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.textmesh.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+    ],
     formats: ['image/avif', 'image/webp'],
   },
   async headers() {
