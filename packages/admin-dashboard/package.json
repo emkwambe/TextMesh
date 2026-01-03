@@ -16,7 +16,7 @@
     "jsonwebtoken": "^9.0.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^25.0.3",
     "@types/uuid": "^9.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.0",
