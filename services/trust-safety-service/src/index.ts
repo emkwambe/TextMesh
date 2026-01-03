@@ -19,10 +19,10 @@ import { ContentModerator } from './moderation/ContentModerator';
 import { ToxicityDetector } from './detection/ToxicityDetector';
 import { SpamDetector } from './detection/SpamDetector';
 import { BehaviorAnalyzer } from './detection/BehaviorAnalyzer';
-import { RiskScorer } from './scoring/RiskScorer';
-import { ShadowBanManager } from './enforcement/ShadowBanManager';
-import { AppealManager } from './enforcement/AppealManager';
-import { AuditLogger } from './audit/AuditLogger';
+// import { RiskScorer } from './scoring/RiskScorer';
+// import { ShadowBanManager } from './enforcement/ShadowBanManager';
+// import { AppealManager } from './enforcement/AppealManager';
+// import { AuditLogger } from './audit/AuditLogger';
 
 // ============ SERVICE INSTANCES ============
 
@@ -30,10 +30,10 @@ let contentModerator: ContentModerator;
 let toxicityDetector: ToxicityDetector;
 let spamDetector: SpamDetector;
 let behaviorAnalyzer: BehaviorAnalyzer;
-let riskScorer: RiskScorer;
-let shadowBanManager: ShadowBanManager;
-let appealManager: AppealManager;
-let auditLogger: AuditLogger;
+// let riskScorer: RiskScorer;
+// let shadowBanManager: ShadowBanManager;
+// let appealManager: AppealManager;
+// let auditLogger: AuditLogger;
 
 // ============ CONTENT MODERATION ENDPOINTS ============
 
@@ -72,13 +72,14 @@ app.post('/api/trust-safety/report', async (req: Request, res: Response) => {
       details,
     });
 
-    await auditLogger.logAction({
-      action: 'REPORT_CREATED',
-      actorId: reporterId,
-      targetId: contentId,
-      targetType: contentType,
-      details: { reason },
-    });
+    // TODO: Re-enable when AuditLogger is available
+    // await auditLogger.logAction({
+    //   action: 'REPORT_CREATED',
+    //   actorId: reporterId,
+    //   targetId: contentId,
+    //   targetType: contentType,
+    //   details: { reason },
+    // });
 
     res.json({
       success: true,
@@ -125,13 +126,14 @@ app.post('/api/trust-safety/action', async (req: Request, res: Response) => {
       duration,
     });
 
-    await auditLogger.logAction({
-      action: `MODERATION_${action.toUpperCase()}`,
-      actorId: moderatorId,
-      targetId: reportId,
-      targetType: 'report',
-      details: { reason, duration },
-    });
+    // TODO: Re-enable when AuditLogger is available
+    // await auditLogger.logAction({
+    //   action: `MODERATION_${action.toUpperCase()}`,
+    //   actorId: moderatorId,
+    //   targetId: reportId,
+    //   targetType: 'report',
+    //   details: { reason, duration },
+    // });
 
     res.json({
       success: true,
@@ -146,200 +148,205 @@ app.post('/api/trust-safety/action', async (req: Request, res: Response) => {
 // ============ USER RISK ENDPOINTS ============
 
 // Get user risk score
-app.get('/api/trust-safety/risk/:userId', async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const riskProfile = await riskScorer.getUserRiskProfile(userId);
-
-    res.json({
-      success: true,
-      data: riskProfile,
-    });
-  } catch (error) {
-    logger.error('Failed to get risk score', error);
-    res.status(500).json({ success: false, error: 'Failed to get risk score' });
-  }
-});
+// TODO: Re-enable when RiskScorer is available
+// app.get('/api/trust-safety/risk/:userId', async (req: Request, res: Response) => {
+//   try {
+//     const { userId } = req.params;
+//     const riskProfile = await riskScorer.getUserRiskProfile(userId);
+//
+//     res.json({
+//       success: true,
+//       data: riskProfile,
+//     });
+//   } catch (error) {
+//     logger.error('Failed to get risk score', error);
+//     res.status(500).json({ success: false, error: 'Failed to get risk score' });
+//   }
+// });
 
 // Update user risk factors
-app.post('/api/trust-safety/risk/update', async (req: Request, res: Response) => {
-  try {
-    const { userId, factor, value } = req.body as RiskUpdateRequest;
-
-    await riskScorer.updateRiskFactor(userId, factor, value);
-
-    res.json({ success: true });
-  } catch (error) {
-    logger.error('Failed to update risk factor', error);
-    res.status(500).json({ success: false, error: 'Failed to update' });
-  }
-});
+// TODO: Re-enable when RiskScorer is available
+// app.post('/api/trust-safety/risk/update', async (req: Request, res: Response) => {
+//   try {
+//     const { userId, factor, value } = req.body as RiskUpdateRequest;
+//
+//     await riskScorer.updateRiskFactor(userId, factor, value);
+//
+//     res.json({ success: true });
+//   } catch (error) {
+//     logger.error('Failed to update risk factor', error);
+//     res.status(500).json({ success: false, error: 'Failed to update' });
+//   }
+// });
 
 // ============ SHADOW BAN ENDPOINTS ============
 
+// TODO: Re-enable when ShadowBanManager is available
 // Check shadow ban status
-app.get('/api/trust-safety/shadowban/:userId', async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const status = await shadowBanManager.getStatus(userId);
-
-    res.json({
-      success: true,
-      data: status,
-    });
-  } catch (error) {
-    logger.error('Failed to get shadow ban status', error);
-    res.status(500).json({ success: false, error: 'Failed to get status' });
-  }
-});
+// app.get('/api/trust-safety/shadowban/:userId', async (req: Request, res: Response) => {
+//   try {
+//     const { userId } = req.params;
+//     const status = await shadowBanManager.getStatus(userId);
+//
+//     res.json({
+//       success: true,
+//       data: status,
+//     });
+//   } catch (error) {
+//     logger.error('Failed to get shadow ban status', error);
+//     res.status(500).json({ success: false, error: 'Failed to get status' });
+//   }
+// });
 
 // Apply shadow ban (admin)
-app.post('/api/trust-safety/shadowban', async (req: Request, res: Response) => {
-  try {
-    const { userId, moderatorId, reason, level, duration } = req.body as ShadowBanRequest;
-
-    await shadowBanManager.applyShadowBan({
-      userId,
-      moderatorId,
-      reason,
-      level,
-      duration,
-    });
-
-    await auditLogger.logAction({
-      action: 'SHADOW_BAN_APPLIED',
-      actorId: moderatorId,
-      targetId: userId,
-      targetType: 'user',
-      details: { reason, level, duration },
-    });
-
-    res.json({ success: true });
-  } catch (error) {
-    logger.error('Failed to apply shadow ban', error);
-    res.status(500).json({ success: false, error: 'Failed to apply shadow ban' });
-  }
-});
+// app.post('/api/trust-safety/shadowban', async (req: Request, res: Response) => {
+//   try {
+//     const { userId, moderatorId, reason, level, duration } = req.body as ShadowBanRequest;
+//
+//     await shadowBanManager.applyShadowBan({
+//       userId,
+//       moderatorId,
+//       reason,
+//       level,
+//       duration,
+//     });
+//
+//     await auditLogger.logAction({
+//       action: 'SHADOW_BAN_APPLIED',
+//       actorId: moderatorId,
+//       targetId: userId,
+//       targetType: 'user',
+//       details: { reason, level, duration },
+//     });
+//
+//     res.json({ success: true });
+//   } catch (error) {
+//     logger.error('Failed to apply shadow ban', error);
+//     res.status(500).json({ success: false, error: 'Failed to apply shadow ban' });
+//   }
+// });
 
 // Remove shadow ban (admin)
-app.delete('/api/trust-safety/shadowban/:userId', async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const { moderatorId, reason } = req.body as { moderatorId: string; reason: string };
-
-    await shadowBanManager.removeShadowBan(userId, moderatorId, reason);
-
-    await auditLogger.logAction({
-      action: 'SHADOW_BAN_REMOVED',
-      actorId: moderatorId,
-      targetId: userId,
-      targetType: 'user',
-      details: { reason },
-    });
-
-    res.json({ success: true });
-  } catch (error) {
-    logger.error('Failed to remove shadow ban', error);
-    res.status(500).json({ success: false, error: 'Failed to remove shadow ban' });
-  }
-});
+// app.delete('/api/trust-safety/shadowban/:userId', async (req: Request, res: Response) => {
+//   try {
+//     const { userId } = req.params;
+//     const { moderatorId, reason } = req.body as { moderatorId: string; reason: string };
+//
+//     await shadowBanManager.removeShadowBan(userId, moderatorId, reason);
+//
+//     await auditLogger.logAction({
+//       action: 'SHADOW_BAN_REMOVED',
+//       actorId: moderatorId,
+//       targetId: userId,
+//       targetType: 'user',
+//       details: { reason },
+//     });
+//
+//     res.json({ success: true });
+//   } catch (error) {
+//     logger.error('Failed to remove shadow ban', error);
+//     res.status(500).json({ success: false, error: 'Failed to remove shadow ban' });
+//   }
+// });
 
 // ============ APPEAL ENDPOINTS ============
 
+// TODO: Re-enable when AppealManager is available
 // Submit appeal
-app.post('/api/trust-safety/appeal', async (req: Request, res: Response) => {
-  try {
-    const { userId, actionId, reason, evidence } = req.body as AppealRequest;
-
-    const appeal = await appealManager.submitAppeal({
-      userId,
-      actionId,
-      reason,
-      evidence,
-    });
-
-    res.json({
-      success: true,
-      data: appeal,
-    });
-  } catch (error) {
-    logger.error('Failed to submit appeal', error);
-    res.status(500).json({ success: false, error: 'Failed to submit appeal' });
-  }
-});
+// app.post('/api/trust-safety/appeal', async (req: Request, res: Response) => {
+//   try {
+//     const { userId, actionId, reason, evidence } = req.body as AppealRequest;
+//
+//     const appeal = await appealManager.submitAppeal({
+//       userId,
+//       actionId,
+//       reason,
+//       evidence,
+//     });
+//
+//     res.json({
+//       success: true,
+//       data: appeal,
+//     });
+//   } catch (error) {
+//     logger.error('Failed to submit appeal', error);
+//     res.status(500).json({ success: false, error: 'Failed to submit appeal' });
+//   }
+// });
 
 // Get appeal status
-app.get('/api/trust-safety/appeal/:appealId', async (req: Request, res: Response) => {
-  try {
-    const { appealId } = req.params;
-    const appeal = await appealManager.getAppeal(appealId);
-
-    res.json({
-      success: true,
-      data: appeal,
-    });
-  } catch (error) {
-    logger.error('Failed to get appeal', error);
-    res.status(500).json({ success: false, error: 'Failed to get appeal' });
-  }
-});
+// app.get('/api/trust-safety/appeal/:appealId', async (req: Request, res: Response) => {
+//   try {
+//     const { appealId } = req.params;
+//     const appeal = await appealManager.getAppeal(appealId);
+//
+//     res.json({
+//       success: true,
+//       data: appeal,
+//     });
+//   } catch (error) {
+//     logger.error('Failed to get appeal', error);
+//     res.status(500).json({ success: false, error: 'Failed to get appeal' });
+//   }
+// });
 
 // Process appeal (admin)
-app.post('/api/trust-safety/appeal/:appealId/process', async (req: Request, res: Response) => {
-  try {
-    const { appealId } = req.params;
-    const { moderatorId, decision, reason } = req.body as AppealDecisionRequest;
-
-    const result = await appealManager.processAppeal({
-      appealId,
-      moderatorId,
-      decision,
-      reason,
-    });
-
-    await auditLogger.logAction({
-      action: `APPEAL_${decision.toUpperCase()}`,
-      actorId: moderatorId,
-      targetId: appealId,
-      targetType: 'appeal',
-      details: { reason },
-    });
-
-    res.json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    logger.error('Failed to process appeal', error);
-    res.status(500).json({ success: false, error: 'Failed to process appeal' });
-  }
-});
+// app.post('/api/trust-safety/appeal/:appealId/process', async (req: Request, res: Response) => {
+//   try {
+//     const { appealId } = req.params;
+//     const { moderatorId, decision, reason } = req.body as AppealDecisionRequest;
+//
+//     const result = await appealManager.processAppeal({
+//       appealId,
+//       moderatorId,
+//       decision,
+//       reason,
+//     });
+//
+//     await auditLogger.logAction({
+//       action: `APPEAL_${decision.toUpperCase()}`,
+//       actorId: moderatorId,
+//       targetId: appealId,
+//       targetType: 'appeal',
+//       details: { reason },
+//     });
+//
+//     res.json({
+//       success: true,
+//       data: result,
+//     });
+//   } catch (error) {
+//     logger.error('Failed to process appeal', error);
+//     res.status(500).json({ success: false, error: 'Failed to process appeal' });
+//   }
+// });
 
 // ============ AUDIT ENDPOINTS ============
 
+// TODO: Re-enable when AuditLogger is available
 // Get audit logs (admin)
-app.get('/api/trust-safety/audit', async (req: Request, res: Response) => {
-  try {
-    const { actorId, targetId, action, startDate, endDate, limit = 100 } = req.query;
-
-    const logs = await auditLogger.getLogs({
-      actorId: actorId as string,
-      targetId: targetId as string,
-      action: action as string,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
-      limit: Number(limit),
-    });
-
-    res.json({
-      success: true,
-      data: logs,
-    });
-  } catch (error) {
-    logger.error('Failed to get audit logs', error);
-    res.status(500).json({ success: false, error: 'Failed to get logs' });
-  }
-});
+// app.get('/api/trust-safety/audit', async (req: Request, res: Response) => {
+//   try {
+//     const { actorId, targetId, action, startDate, endDate, limit = 100 } = req.query;
+//
+//     const logs = await auditLogger.getLogs({
+//       actorId: actorId as string,
+//       targetId: targetId as string,
+//       action: action as string,
+//       startDate: startDate ? new Date(startDate as string) : undefined,
+//       endDate: endDate ? new Date(endDate as string) : undefined,
+//       limit: Number(limit),
+//     });
+//
+//     res.json({
+//       success: true,
+//       data: logs,
+//     });
+//   } catch (error) {
+//     logger.error('Failed to get audit logs', error);
+//     res.status(500).json({ success: false, error: 'Failed to get logs' });
+//   }
+// });
 
 // ============ ANALYTICS ENDPOINTS ============
 
@@ -461,17 +468,17 @@ async function main() {
     toxicityDetector = new ToxicityDetector();
     spamDetector = new SpamDetector(redis);
     behaviorAnalyzer = new BehaviorAnalyzer(redis, prisma);
-    riskScorer = new RiskScorer(redis, prisma);
-    shadowBanManager = new ShadowBanManager(redis, prisma);
-    appealManager = new AppealManager(redis, prisma);
-    auditLogger = new AuditLogger(prisma);
+    // riskScorer = new RiskScorer(redis, prisma);
+    // shadowBanManager = new ShadowBanManager(redis, prisma);
+    // appealManager = new AppealManager(redis, prisma);
+    // auditLogger = new AuditLogger(prisma);
     contentModerator = new ContentModerator(
       redis,
       prisma,
       toxicityDetector,
       spamDetector,
-      behaviorAnalyzer,
-      riskScorer
+      behaviorAnalyzer
+      // riskScorer
     );
 
     app.listen(PORT, () => {

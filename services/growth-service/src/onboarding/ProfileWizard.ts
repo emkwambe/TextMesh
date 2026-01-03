@@ -1,4 +1,4 @@
-// =================================
+﻿// =================================
 // TEXTMESH PROFILE WIZARD
 // Smart Profile Setup Assistance
 // =================================
@@ -66,13 +66,13 @@ const BIO_TEMPLATES: BioTemplate[] = [
   {
     id: 'creative',
     category: 'Creative',
-    template: '{{role}} • {{passion}} • Creating {{what}} for {{audience}}',
+    template: '{{role}} â€¢ {{passion}} â€¢ Creating {{what}} for {{audience}}',
     placeholders: ['role', 'passion', 'what', 'audience'],
   },
   {
     id: 'simple',
     category: 'Simple',
-    template: 'Love {{interest1}}, {{interest2}}, and {{interest3}}. {{location}} 📍',
+    template: 'Love {{interest1}}, {{interest2}}, and {{interest3}}. {{location}} ðŸ“',
     placeholders: ['interest1', 'interest2', 'interest3', 'location'],
   },
   {
@@ -102,7 +102,7 @@ const BIO_TEMPLATES: BioTemplate[] = [
   {
     id: 'traveler',
     category: 'Traveler',
-    template: '🌍 {{countries}} countries visited. Currently in {{current_location}}. Next stop: {{next_destination}}',
+    template: 'ðŸŒ {{countries}} countries visited. Currently in {{current_location}}. Next stop: {{next_destination}}',
     placeholders: ['countries', 'current_location', 'next_destination'],
   },
 ];
@@ -141,7 +141,7 @@ export class ProfileWizard {
         username: true,
         displayName: true,
         bio: true,
-        avatar: true,
+        avatarUrl: true,
         website: true,
         location: true,
         email: true,
@@ -191,7 +191,7 @@ export class ProfileWizard {
         username: true,
         displayName: true,
         bio: true,
-        avatar: true,
+        avatarUrl: true,
         website: true,
         location: true,
       },
@@ -410,14 +410,14 @@ export class ProfileWizard {
   private validateUpdates(updates: ProfileUpdates): Partial<{
     displayName: string;
     bio: string;
-    avatar: string;
+    avatarUrl: string;
     website: string;
     location: string;
   }> {
     const validated: Partial<{
       displayName: string;
       bio: string;
-      avatar: string;
+      avatarUrl: string;
       website: string;
       location: string;
     }> = {};
@@ -439,7 +439,7 @@ export class ProfileWizard {
     if (updates.avatar !== undefined) {
       // Validate URL format
       if (this.isValidUrl(updates.avatar)) {
-        validated.avatar = updates.avatar;
+        validated.avatarUrl = updates.avatar;
       }
     }
 
@@ -470,3 +470,5 @@ export class ProfileWizard {
 }
 
 export default ProfileWizard;
+
+

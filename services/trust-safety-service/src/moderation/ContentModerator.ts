@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ToxicityDetector } from '../detection/ToxicityDetector';
 import { SpamDetector } from '../detection/SpamDetector';
 import { BehaviorAnalyzer } from '../detection/BehaviorAnalyzer';
-import { RiskScorer } from '../scoring/RiskScorer';
+// import { RiskScorer } from '../scoring/RiskScorer';
 
 // ============ TYPES ============
 
@@ -127,22 +127,22 @@ export class ContentModerator {
   private toxicityDetector: ToxicityDetector;
   private spamDetector: SpamDetector;
   private behaviorAnalyzer: BehaviorAnalyzer;
-  private riskScorer: RiskScorer;
+  // private riskScorer: RiskScorer;
 
   constructor(
     redis: Redis,
     prisma: PrismaClient,
     toxicityDetector: ToxicityDetector,
     spamDetector: SpamDetector,
-    behaviorAnalyzer: BehaviorAnalyzer,
-    riskScorer: RiskScorer
+    behaviorAnalyzer: BehaviorAnalyzer
+    // riskScorer: RiskScorer
   ) {
     this.redis = redis;
     this.prisma = prisma;
     this.toxicityDetector = toxicityDetector;
     this.spamDetector = spamDetector;
     this.behaviorAnalyzer = behaviorAnalyzer;
-    this.riskScorer = riskScorer;
+    // this.riskScorer = riskScorer;
   }
 
   /**
@@ -153,11 +153,12 @@ export class ContentModerator {
     const analysisId = uuidv4();
 
     // Run all detectors in parallel
-    const [toxicityResult, spamResult, userRisk] = await Promise.all([
+    const [toxicityResult, spamResult] = await Promise.all([
       this.toxicityDetector.analyze(content),
       this.spamDetector.analyze(content, userId),
-      this.riskScorer.getUserRiskScore(userId),
+      // this.riskScorer.getUserRiskScore(userId),
     ]);
+    const userRisk = 0; // Default risk score when RiskScorer is disabled
 
     // Calculate content scores
     const scores: ContentScores = {
@@ -329,9 +330,9 @@ export class ContentModerator {
     await this.updateReportStatus(reportId, 'resolved', moderatorId, actionType, reason);
 
     // Update user risk score
-    if (['remove', 'warn', 'mute', 'suspend', 'ban'].includes(actionType)) {
-      await this.riskScorer.incrementViolation(report.contentId, actionType);
-    }
+    // if (['remove', 'warn', 'mute', 'suspend', 'ban'].includes(actionType)) {
+    //   await this.riskScorer.incrementViolation(report.contentId, actionType);
+    // }
 
     return {
       success: true,

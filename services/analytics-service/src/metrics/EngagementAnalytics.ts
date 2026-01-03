@@ -213,9 +213,9 @@ export class EngagementAnalytics {
   private async getOverview(since: Date): Promise<EngagementOverview> {
     try {
       const [likes, comments, shares] = await Promise.all([
-        this.prisma.like.count({ where: { createdAt: { gte: since } } }),
-        this.prisma.comment.count({ where: { createdAt: { gte: since } } }),
-        this.prisma.repost.count({ where: { createdAt: { gte: since } } }),
+        this.prisma.postLike.count({ where: { createdAt: { gte: since } } }),
+        this.prisma.post.count({ where: { createdAt: { gte: since }, parentId: { not: null } } }), // Comments are replies
+        this.prisma.post.count({ where: { createdAt: { gte: since }, repostId: { not: null } } }), // Reposts
       ]);
 
       const totalEngagements = likes + comments + shares;
@@ -283,13 +283,13 @@ export class EngagementAnalytics {
 
       switch (action) {
         case 'like':
-          total = await this.prisma.like.count({ where: { createdAt: { gte: since } } });
+          total = await this.prisma.postLike.count({ where: { createdAt: { gte: since } } });
           break;
         case 'comment':
-          total = await this.prisma.comment.count({ where: { createdAt: { gte: since } } });
+          total = await this.prisma.post.count({ where: { createdAt: { gte: since }, parentId: { not: null } } });
           break;
         case 'share':
-          total = await this.prisma.repost.count({ where: { createdAt: { gte: since } } });
+          total = await this.prisma.post.count({ where: { createdAt: { gte: since }, repostId: { not: null } } });
           break;
         case 'follow':
           total = await this.prisma.follow.count({ where: { createdAt: { gte: since } } });

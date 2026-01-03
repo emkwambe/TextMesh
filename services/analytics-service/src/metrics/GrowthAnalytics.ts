@@ -824,19 +824,21 @@ export class GrowthAnalytics {
   private async getTotalEngagements(since: Date, until?: Date): Promise<number> {
     try {
       const [likes, comments, shares] = await Promise.all([
-        this.prisma.like.count({
+        this.prisma.postLike.count({
           where: {
             createdAt: { gte: since, ...(until && { lt: until }) },
           },
         }),
-        this.prisma.comment.count({
+        this.prisma.post.count({
           where: {
             createdAt: { gte: since, ...(until && { lt: until }) },
+            parentId: { not: null },
           },
         }),
-        this.prisma.repost.count({
+        this.prisma.post.count({
           where: {
             createdAt: { gte: since, ...(until && { lt: until }) },
+            repostId: { not: null },
           },
         }),
       ]);

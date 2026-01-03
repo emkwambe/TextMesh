@@ -1,4 +1,4 @@
-// =================================
+﻿// =================================
 // TEXTMESH FOLLOW SUGGESTIONS
 // Smart User Discovery & Suggestions
 // =================================
@@ -50,42 +50,42 @@ const SUGGESTION_REASONS: Record<SuggestionType, SuggestionReason> = {
   popular: {
     type: 'popular',
     description: 'Popular on TextMesh',
-    icon: '🔥',
+    icon: 'ðŸ”¥',
   },
   interests: {
     type: 'interests',
     description: 'Based on your interests',
-    icon: '🎯',
+    icon: 'ðŸŽ¯',
   },
   mutual: {
     type: 'mutual',
     description: 'Followed by people you follow',
-    icon: '👥',
+    icon: 'ðŸ‘¥',
   },
   similar: {
     type: 'similar',
     description: 'Similar to accounts you follow',
-    icon: '✨',
+    icon: 'âœ¨',
   },
   local: {
     type: 'local',
     description: 'From your area',
-    icon: '📍',
+    icon: 'ðŸ“',
   },
   contacts: {
     type: 'contacts',
     description: 'From your contacts',
-    icon: '📱',
+    icon: 'ðŸ“±',
   },
   trending: {
     type: 'trending',
     description: 'Trending today',
-    icon: '📈',
+    icon: 'ðŸ“ˆ',
   },
   curated: {
     type: 'curated',
     description: 'Recommended for you',
-    icon: '⭐',
+    icon: 'â­',
   },
 };
 
@@ -112,11 +112,11 @@ export class FollowSuggestions {
     let suggestions: UserSuggestion[] = [];
 
     // Get user's current following list for exclusion
-    let followingIds: Set<string> = new Set();
+    let followeeIds: Set<string> = new Set();
     if (excludeFollowing) {
-      const following = await this.redis.smembers(`user:following:${userId}`);
-      followingIds = new Set(following);
-      followingIds.add(userId); // Exclude self
+      const following = await this.redis.smembers(`user:followee:${userId}`);
+      followeeIds = new Set(following);
+      followeeIds.add(userId); // Exclude self
     }
 
     // Get suggestions based on type
@@ -128,18 +128,18 @@ export class FollowSuggestions {
         similar,
         trending,
       ] = await Promise.all([
-        this.getPopularSuggestions(userId, followingIds, 10),
-        this.getInterestBasedSuggestions(userId, followingIds, 10),
-        this.getMutualFollowerSuggestions(userId, followingIds, 10),
-        this.getSimilarAccountSuggestions(userId, followingIds, 10),
-        this.getTrendingSuggestions(userId, followingIds, 5),
+        this.getPopularSuggestions(userId, followeeIds, 10),
+        this.getInterestBasedSuggestions(userId, followeeIds, 10),
+        this.getMutualFollowerSuggestions(userId, followeeIds, 10),
+        this.getSimilarAccountSuggestions(userId, followeeIds, 10),
+        this.getTrendingSuggestions(userId, followeeIds, 5),
       ]);
 
       suggestions = [
         ...this.diversify([...popular, ...interests, ...mutual, ...similar, ...trending]),
       ];
     } else {
-      suggestions = await this.getSuggestionsByType(userId, type, followingIds, limit);
+      suggestions = await this.getSuggestionsByType(userId, type, followeeIds, limit);
     }
 
     // Sort by score and limit
@@ -190,7 +190,8 @@ export class FollowSuggestions {
         where: {
           id: { notIn: [...excludeIds] },
           isVerified: true,
-          isBanned: false,
+          // TODO: Re-enable when isBanned field is added to User model
+          // isBanned: false,
         },
         orderBy: { followerCount: 'desc' },
         take: limit * 2,
@@ -198,7 +199,7 @@ export class FollowSuggestions {
           id: true,
           username: true,
           displayName: true,
-          avatar: true,
+          avatarUrl: true,
           bio: true,
           followerCount: true,
           isVerified: true,
@@ -212,7 +213,7 @@ export class FollowSuggestions {
           userId: u.id,
           username: u.username,
           displayName: u.displayName,
-          avatar: u.avatar || undefined,
+          avatar: u.avatarUrl || undefined,
           bio: u.bio || undefined,
           followerCount: u.followerCount,
           isVerified: u.isVerified,
@@ -283,7 +284,7 @@ export class FollowSuggestions {
     limit: number
   ): Promise<UserSuggestion[]> {
     // Get who the user follows
-    const following = await this.redis.smembers(`user:following:${userId}`);
+    const following = await this.redis.smembers(`user:followee:${userId}`);
     if (following.length === 0) {
       return [];
     }
@@ -292,7 +293,7 @@ export class FollowSuggestions {
     const candidateCounts = new Map<string, number>();
 
     for (const followedId of following.slice(0, 50)) {
-      const theirFollowing = await this.redis.smembers(`user:following:${followedId}`);
+      const theirFollowing = await this.redis.smembers(`user:followee:${followedId}`);
 
       for (const candidateId of theirFollowing) {
         if (excludeIds.has(candidateId)) continue;
@@ -336,7 +337,7 @@ export class FollowSuggestions {
   ): Promise<UserSuggestion[]> {
     // This would use ML-based similarity in production
     // For now, use follower overlap
-    const following = await this.redis.smembers(`user:following:${userId}`);
+    const following = await this.redis.smembers(`user:followee:${userId}`);
     if (following.length === 0) {
       return [];
     }
@@ -351,7 +352,7 @@ export class FollowSuggestions {
         if (excludeIds.has(candidateId)) continue;
 
         // Check if candidate follows similar accounts
-        const candidateFollowing = await this.redis.smembers(`user:following:${candidateId}`);
+        const candidateFollowing = await this.redis.smembers(`user:followee:${candidateId}`);
         const overlap = following.filter((f) => candidateFollowing.includes(f));
 
         if (overlap.length >= 2) {
@@ -409,14 +410,15 @@ export class FollowSuggestions {
         where: {
           id: { notIn: [...excludeIds] },
           location: { contains: user.location, mode: 'insensitive' },
-          isBanned: false,
+          // TODO: Re-enable when isBanned field is added to User model
+          // isBanned: false,
         },
         take: limit,
         select: {
           id: true,
           username: true,
           displayName: true,
-          avatar: true,
+          avatarUrl: true,
           bio: true,
           followerCount: true,
           isVerified: true,
@@ -427,7 +429,7 @@ export class FollowSuggestions {
         userId: u.id,
         username: u.username,
         displayName: u.displayName,
-        avatar: u.avatar || undefined,
+        avatar: u.avatarUrl || undefined,
         bio: u.bio || undefined,
         followerCount: u.followerCount,
         isVerified: u.isVerified,
@@ -525,7 +527,7 @@ export class FollowSuggestions {
           id: true,
           username: true,
           displayName: true,
-          avatar: true,
+          avatarUrl: true,
           bio: true,
           followerCount: true,
           isVerified: true,
@@ -538,7 +540,7 @@ export class FollowSuggestions {
         userId: user.id,
         username: user.username,
         displayName: user.displayName,
-        avatar: user.avatar || undefined,
+        avatar: user.avatarUrl || undefined,
         bio: user.bio || undefined,
         followerCount: user.followerCount,
         isVerified: user.isVerified,
@@ -584,3 +586,5 @@ export class FollowSuggestions {
 }
 
 export default FollowSuggestions;
+
+

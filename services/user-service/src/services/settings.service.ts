@@ -1,8 +1,9 @@
-// =================================
+﻿// =================================
 // SETTINGS SERVICE
 // =================================
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client'
+import { MentionSetting } from '@prisma/client';
 import Redis from 'ioredis';
 import { Logger } from '@textmesh/logger';
 import { ErrorCode, AppError, UserSettings } from '@textmesh/shared-types';
@@ -55,10 +56,19 @@ export class SettingsService {
       doNotSellData: boolean;
     }>
   ): Promise<UserSettings> {
+    // Cast string values to proper enum types for Prisma
+    const prismaData: any = { ...data };
+    if (data.allowMentions !== undefined) {
+      prismaData.allowMentions = data.allowMentions.toUpperCase() as MentionSetting;
+    }
+    if (data.allowDirectMessages !== undefined) {
+      prismaData.allowDirectMessages = data.allowDirectMessages.toUpperCase() as MentionSetting;
+    }
+
     const settings = await this.prisma.userSettings.upsert({
       where: { userId },
-      create: { userId, ...data },
-      update: { ...data, updatedAt: new Date() },
+      create: { user: { connect: { id: userId } }, ...prismaData },
+      update: { ...prismaData, updatedAt: new Date() },
     });
 
     // If privacy setting changed, update user record too
@@ -235,8 +245,8 @@ export class SettingsService {
       smsNotifications: settings.smsNotifications,
       privateAccount: settings.privateAccount,
       showOnlineStatus: settings.showOnlineStatus,
-      allowMentions: settings.allowMentions.toLowerCase(),
-      allowDirectMessages: settings.allowDirectMessages.toLowerCase(),
+      allowMentions: ((settings.allowMentions.toLowerCase()) as MentionSetting as any),
+      allowDirectMessages: ((settings.allowDirectMessages.toLowerCase()) as MentionSetting as any),
       language: settings.language,
       timezone: settings.timezone,
       theme: settings.theme.toLowerCase(),
@@ -247,3 +257,5 @@ export class SettingsService {
     };
   }
 }
+
+

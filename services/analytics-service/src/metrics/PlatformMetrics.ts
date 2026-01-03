@@ -208,9 +208,9 @@ export class PlatformMetrics {
   async getEngagementMetrics(since: Date): Promise<EngagementMetrics> {
     try {
       const [likes, comments, shares] = await Promise.all([
-        this.prisma.like.count({ where: { createdAt: { gte: since } } }),
-        this.prisma.comment.count({ where: { createdAt: { gte: since } } }),
-        this.prisma.repost.count({ where: { createdAt: { gte: since } } }),
+        this.prisma.postLike.count({ where: { createdAt: { gte: since } } }),
+        this.prisma.post.count({ where: { createdAt: { gte: since }, parentId: { not: null } } }),
+        this.prisma.post.count({ where: { createdAt: { gte: since }, repostId: { not: null } } }),
       ]);
 
       // Get session metrics from Redis
@@ -425,7 +425,7 @@ export class PlatformMetrics {
   private async getTotalEngagement(since: Date, until?: Date): Promise<number> {
     try {
       const [likes, comments, shares] = await Promise.all([
-        this.prisma.like.count({
+        this.prisma.postLike.count({
           where: {
             createdAt: {
               gte: since,
@@ -433,20 +433,22 @@ export class PlatformMetrics {
             },
           },
         }),
-        this.prisma.comment.count({
+        this.prisma.post.count({
           where: {
             createdAt: {
               gte: since,
               ...(until && { lt: until }),
             },
+            parentId: { not: null },
           },
         }),
-        this.prisma.repost.count({
+        this.prisma.post.count({
           where: {
             createdAt: {
               gte: since,
               ...(until && { lt: until }),
             },
+            repostId: { not: null },
           },
         }),
       ]);

@@ -1,4 +1,4 @@
-// =================================
+﻿// =================================
 // TEXTMESH ONBOARDING MANAGER
 // User Onboarding Flow Controller
 // =================================
@@ -113,28 +113,29 @@ export class OnboardingManager {
       return JSON.parse(cached) as OnboardingStatus;
     }
 
-    // Check if user has already completed onboarding
+    // Check if user exists
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { onboardingCompleted: true, createdAt: true },
+      select: { createdAt: true },
     });
 
     if (!user) {
       throw new Error('User not found');
     }
 
-    if (user.onboardingCompleted) {
-      return {
-        userId,
-        isComplete: true,
-        currentStep: 'complete',
-        completedSteps: ONBOARDING_STEPS,
-        skippedSteps: [],
-        progress: 100,
-        startedAt: user.createdAt,
-        completedAt: user.createdAt,
-      };
-    }
+    // TODO: Re-enable when onboardingCompleted field is added to User model
+    // if (user.onboardingCompleted) {
+    //   return {
+    //     userId,
+    //     isComplete: true,
+    //     currentStep: 'complete',
+    //     completedSteps: ONBOARDING_STEPS,
+    //     skippedSteps: [],
+    //     progress: 100,
+    //     startedAt: user.createdAt,
+    //     completedAt: user.createdAt,
+    //   };
+    // }
 
     // Initialize new onboarding status
     const status: OnboardingStatus = {
@@ -406,10 +407,11 @@ export class OnboardingManager {
   }
 
   private async markOnboardingComplete(userId: string): Promise<void> {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { onboardingCompleted: true },
-    });
+    // TODO: Re-enable when onboardingCompleted field is added to User model
+    // await this.prisma.user.update({
+    //   where: { id: userId },
+    //   data: { onboardingCompleted: true },
+    // });
   }
 
   private async updateNotificationPreferences(
@@ -448,3 +450,4 @@ export class OnboardingManager {
 }
 
 export default OnboardingManager;
+
