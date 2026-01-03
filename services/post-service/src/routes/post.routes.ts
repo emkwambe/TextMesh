@@ -3,11 +3,12 @@
 // =================================
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, GroupType } from '@prisma/client';
 import Redis from 'ioredis';
 import { EventBus } from '@textmesh/event-bus';
 import { Logger } from '@textmesh/logger';
 import { PostService } from '../services/post.service.js';
+import { FirstPostPrompts } from '../prompts/FirstPostPrompts.js';
 import { validateRequest } from '../middleware/validate.js';
 import { asyncHandler } from '../middleware/error-handler.js';
 import { z } from 'zod';
@@ -200,6 +201,33 @@ export function postRoutes(
     asyncHandler(async (_req: Request, res: Response) => {
       const hashtags = await postService.getTrendingHashtags();
       res.json({ success: true, data: { hashtags } });
+    })
+  );
+
+  // Get first post prompt for a group
+  router.get(
+    '/prompts/first-post/:groupId',
+    asyncHandler(async (req: Request, res: Response) => {
+      const { groupId } = req.params;
+
+      // Get group to determine its type
+      const group = await prisma.group.findUnique({
+        where: { id: groupId },
+        select: { groupType: true },
+      });
+
+      if (!group) {
+        res.status(404).json({
+          success: false,
+          error: { code: 'GROUP_NOT_FOUND', message: 'Group not found' },
+        });
+        return;
+      }
+
+      const firstPostPrompts = new FirstPostPrompts();
+      const prompt = firstPostPrompts.getPrompt(group.groupType as GroupType);
+
+      res.json({ success: true, data: { prompt } });
     })
   );
 
