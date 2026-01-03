@@ -64,6 +64,7 @@ model User {
   sessions        Session[]
   settings        UserSettings?
   onboarding      UserOnboarding?
+  notificationPreferences NotificationPreference[]
   pushTokens      PushToken[]
   media           Media[]
   moderationLogs  ModerationLog[]
@@ -156,6 +157,9 @@ model Post {
   groupId     String?        @db.Uuid
   parentId    String?        @db.Uuid
   repostId    String?        @db.Uuid
+  style       PostStyle      @default(DEFAULT)
+  emphasis    PostEmphasis   @default(NONE)
+  template    String?        @db.Uuid
   likeCount   Int            @default(0)
   replyCount  Int            @default(0)
   repostCount Int            @default(0)
@@ -310,6 +314,7 @@ model Group {
   invites     GroupInvite[]
   posts       Post[]
   reports     Report[]
+  notificationPreferences NotificationPreference[]
 
   @@index([slug])
   @@index([ownerId])
@@ -864,6 +869,31 @@ enum DataExportStatus {
   FAILED
 }
 
+enum PostStyle {
+  DEFAULT
+  ANNOUNCEMENT
+  QUESTION
+  UPDATE
+  DISCUSSION
+}
+
+enum NotificationFrequency {
+  IMMEDIATE
+  DAILY_DIGEST
+  WEEKLY_DIGEST
+  DISABLED
+}
+
+enum PostEmphasis {
+  NONE
+  HIGHLIGHT_YELLOW
+  HIGHLIGHT_BLUE
+  HIGHLIGHT_GREEN
+  COLOR_RED
+  COLOR_BLUE
+  COLOR_GREEN
+}
+
 // =================================
 // CONVERSATIONS (for realtime messaging)
 // =================================
@@ -987,4 +1017,51 @@ enum AppealStatus {
   RESOLVED
   WITHDRAWN
   ESCALATED
+}
+
+// =================================
+// SPRINT 3: EXPRESSION & POLISH
+// =================================
+
+model PostTemplate {
+  id          String     @id @default(uuid()) @db.Uuid
+  name        String     @db.VarChar(100)
+  style       PostStyle
+  placeholder String     @db.VarChar(200)
+  structure   Json       // Template structure
+  isSystem    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+
+  @@index([style])
+}
+
+model NotificationPreference {
+  id             String                 @id @default(uuid()) @db.Uuid
+  userId         String                 @db.Uuid
+  groupId        String?                @db.Uuid
+  frequency      NotificationFrequency  @default(IMMEDIATE)
+  mutedUntil     DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group          Group?                 @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@index([userId])
+  @@index([groupId])
+}
+
+model AnalyticsEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  eventType   String   @db.VarChar(50)
+  userId      String?  @db.Uuid
+  groupId     String?  @db.Uuid
+  postId      String?  @db.Uuid
+  metadata    Json?
+  timestamp   DateTime @default(now())
+
+  @@index([eventType, timestamp])
+  @@index([userId, timestamp])
+  @@index([groupId, timestamp])
 }
