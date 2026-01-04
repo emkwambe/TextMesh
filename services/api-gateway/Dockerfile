@@ -3,7 +3,7 @@
 # =================================
 
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:25-alpine AS builder
 
 WORKDIR /app
 
@@ -41,7 +41,7 @@ RUN pnpm --filter @textmesh/db-client build
 RUN pnpm --filter @textmesh/api-gateway build
 
 # Production stage
-FROM node:22-alpine AS production
+FROM node:25-alpine AS production
 
 WORKDIR /app
 
