@@ -1,4 +1,4 @@
-FROM node:22-alpine AS builder
+FROM node:25-alpine AS builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@8.10.0 --activate
 
@@ -21,7 +21,7 @@ RUN pnpm --filter @textmesh/db-client build
 RUN pnpm --filter @textmesh/event-bus build
 RUN pnpm --filter @textmesh/post-service build
 
-FROM node:22-alpine AS production
+FROM node:25-alpine AS production
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@8.10.0 --activate
 RUN addgroup -g 1001 -S nodejs && adduser -S textmesh -u 1001
