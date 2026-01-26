@@ -1,4 +1,4 @@
-FROM node:22-alpine AS builder
+FROM node:25-alpine AS builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@8.10.0 --activate
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
@@ -12,7 +12,7 @@ COPY packages ./packages
 COPY services/moderation-service ./services/moderation-service
 RUN pnpm --filter @textmesh/shared-types build && pnpm --filter @textmesh/logger build && pnpm --filter @textmesh/db-client build && pnpm --filter @textmesh/event-bus build && pnpm --filter @textmesh/moderation-service build
 
-FROM node:22-alpine AS production
+FROM node:25-alpine AS production
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@8.10.0 --activate
 RUN addgroup -g 1001 -S nodejs && adduser -S textmesh -u 1001
